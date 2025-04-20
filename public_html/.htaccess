@@ -1,0 +1,12 @@
+DirectoryIndex index.html
+
+Options -Indexes
+RewriteEngine On
+RewriteBase /
+
+# Matches any URL that ends with .shtml and rewrites it to remove the .shtml extension and redirect the user to the new URL
+RewriteRule ^(.+).shtml$ /$1 [L,R]
+# Checks if the requested filename with an added .shtml extension exists as a regular file
+RewriteCond %{REQUEST_FILENAME}.shtml -f
+# Rewrites the URL to append the .shtml extension
+RewriteRule ^(.*)/?$ /$1.shtml [END]

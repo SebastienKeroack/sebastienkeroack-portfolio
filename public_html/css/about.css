@@ -1,0 +1,191 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+@import url("/css/utilities/fade-in.css");
+
+main {
+  --card-container-min-height: max(var(--viewport-height), 620px);
+  --card-height: 520px;
+  --card-top-background-height: 200px;
+  --card-width: 355px;
+  --qr-size: 256px;
+
+  align-items: flex-start;
+  flex-direction: row;
+  justify-content: unset;
+
+  > div:nth-of-type(1) {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    height: var(--viewport-height);
+    justify-content: space-between;
+    min-height: var(--card-container-min-height);
+    min-width: 45%;
+
+    > img:nth-of-type(1) {
+      margin-right: calc((var(--card-width) - var(--qr-size)) * 0.5);
+    }
+  }
+
+  > div:nth-of-type(1)::before {
+    background-color: var(--bg-color-02);
+    content: "";
+    display: block;
+    height: inherit;
+    left: 0;
+    min-height: inherit;
+    position: absolute;
+    width: calc(45% - 150px);
+    z-index: -1;
+  }
+}
+
+#author-card {
+  align-items: center;
+  background-color: var(--bg-color-04);
+  border-radius: 5px;
+  box-shadow: 0 0 15px 10px rgb(128 128 128 / 25%);
+  display: flex;
+  flex-direction: column;
+  height: var(--card-height);
+  margin: 50px 50px 0 0;
+  width: var(--card-width);
+
+  /* Cover image */
+  > img:nth-of-type(1) {
+    border-radius: 5px 5px 0 0;
+    height: var(--card-top-background-height);
+    position: absolute;
+    width: inherit;
+  }
+
+  /* Profile image */
+  > img:nth-of-type(2) {
+    border-radius: 50%;
+    height: 200px;
+    margin-top: 50px;
+    width: 200px;
+    z-index: 0;
+  }
+
+  /* Name */
+  > h1 {
+    font-size: 1.7em;
+    line-height: 1.3em;
+    margin: 25px 0 0;
+    text-align: center;
+  }
+
+  /* Blue line seperator */
+  > div:nth-of-type(1) {
+    background-color: var(--primary-color);
+    border-radius: 1.5px;
+    height: 2px;
+    margin-top: 25px;
+    width: 15%;
+  }
+
+  /* Job position */
+  > h2 {
+    font-size: 1.1em;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    margin: auto;
+    text-align: center;
+  }
+
+  /* Social */
+  > nav {
+    align-items: center;
+    background-color: var(--bg-color-03);
+    display: flex;
+    gap: 15px;
+    height: 60px;
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+#author-bio {
+  display: flex;
+  flex-direction: column;
+  margin-right: 10vw;
+  max-width: 800px;
+
+  > h3 {
+    font-size: 6em;
+    margin: 30px 0 0;
+  }
+
+  > h4 {
+    font-size: 1.5em;
+    font-weight: normal;
+  }
+}
+
+/* Mobile */
+@media only screen and (width <= 1023.98px) {
+  main {
+    --card-margin-top: 50px;
+    --card-space-around-top: calc(
+      var(--card-container-min-height) - var(--card-height) -
+        var(--card-margin-top)
+    );
+    --card-top-background-end: calc(
+      var(--card-top-background-height) + var(--card-margin-top)
+    );
+
+    flex-direction: column;
+    font-size: larger;
+
+    > div:nth-of-type(1) {
+      align-items: center;
+      justify-content: space-around;
+      min-width: unset;
+      width: inherit;
+    }
+
+    > div:nth-of-type(1)::before {
+      margin-top: calc(
+        var(--card-top-background-end) * 2 + var(--card-space-around-top)
+      );
+      width: inherit;
+    }
+  }
+
+  #author-card {
+    margin: var(--card-margin-top) 0 0 0;
+    width: max(var(--card-width), 50vw);
+  }
+
+  #author-bio {
+    background-color: var(--bg-color-02);
+    padding: 0 5% 50px;
+    margin-right: unset;
+    max-width: unset;
+    min-height: var(--viewport-height);
+  }
+}
+
+@media print {
+  main > div:nth-of-type(1) {
+    margin-left: 5vw;
+    min-width: unset;
+  }
+
+  #author-card {
+    -webkit-print-color-adjust: exact;
+    margin: 5vh 0 0;
+    print-color-adjust: exact;
+  }
+
+  #author-bio {
+    margin: 5vh 5vw 0;
+
+    > h3 {
+      line-height: 0.7;
+      margin: unset;
+    }
+  }
+}

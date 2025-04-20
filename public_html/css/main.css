@@ -1,0 +1,17 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+@charset "UTF-8";
+
+@import url("settings/global.css");
+@import url("design-tokens/colors.css");
+@import url("design-tokens/media-queries.css");
+@import url("tools/touch.css");
+@import url("generic/normalize.css");
+@import url("elements/fieldsets.css");
+@import url("elements/hyperlinks.css");
+@import url("skeleton/header.css");
+@import url("skeleton/footer.css");
+@import url("skeleton/layouts.css");
+@import url("skeleton/separators.css");
+@import url("components/favicon.css");

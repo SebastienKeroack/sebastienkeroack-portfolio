@@ -1,0 +1,29 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+html[data-theme="dark"] {
+  --bg-color-01: #181818;
+  --bg-color-02: #232323;
+  --bg-color-03: #353535;
+  --bg-color-04: #525252;
+  --bg-color-05: #c6c6c6;
+  --font-color-01: #fff;
+  --font-color-02: #adadad;
+}
+
+html[data-theme="light"] {
+  --bg-color-01: #999;
+  --bg-color-02: #b2b2b2;
+  --bg-color-03: #fff;
+  --bg-color-04: #d9d9d9;
+  --bg-color-05: #494949;
+  --font-color-01: #000;
+  --font-color-02: #747474;
+}
+
+:root {
+  --header-sidebar-width: 200px;
+  --header-topbar-height: 56px;
+  --primary-color: #0050ff;
+  --viewport-height: calc(100vh - var(--header-topbar-height));
+}

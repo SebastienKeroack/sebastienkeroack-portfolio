@@ -1,0 +1,88 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+@import url("/css/utilities/easings.min.css");
+
+#sun-and-moon {
+  --icon-fill: var(--font-color-01);
+  --icon-fill-hover: var(--primary-color);
+  --icon-size: 2rem;
+
+  -webkit-tap-highlight-color: transparent;
+  aspect-ratio: 1;
+  background: none;
+  block-size: var(--icon-size);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  inline-size: var(--icon-size);
+  outline-offset: 5px;
+  padding: 0;
+
+  > svg {
+    block-size: 100%;
+    inline-size: 100%;
+    stroke-linecap: round;
+
+    > :is(#moon, #sun, #sun-beams) {
+      transform-origin: center center;
+    }
+
+    > :is(#moon, #sun) {
+      fill: var(--icon-fill);
+    }
+
+    > #sun {
+      transition: transform 0.5s var(--ease-elastic-3);
+    }
+
+    > #sun-beams {
+      stroke: var(--icon-fill);
+      stroke-width: 2px;
+      transition:
+        transform 0.5s var(--ease-elastic-4),
+        opacity 0.5s var(--ease-3);
+    }
+
+    > #moon > circle {
+      transform: translateX(0);
+      transition: transform 0.25s var(--ease-out-5);
+    }
+  }
+
+  :is(:hover, :focus-visible) {
+    > :is(#moon, #sun) {
+      fill: var(--icon-fill-hover);
+    }
+
+    > #sun-beams {
+      stroke: var(--icon-fill-hover);
+    }
+  }
+}
+
+html[data-theme="dark"] #sun-and-moon > svg {
+  > #sun {
+    transform: scale(1.75);
+    transition-duration: 0.25s;
+    transition-timing-function: var(--ease-3);
+  }
+
+  > #sun-beams {
+    opacity: 0;
+    transform: rotateZ(-25deg);
+    transition-duration: 0.15s;
+  }
+
+  > #moon > circle {
+    transform: translateX(-7px);
+    transition-delay: 0.25s;
+    transition-duration: 0.5s;
+  }
+}
+
+@media (hover: none) {
+  #sun-and-moon {
+    --icon-size: 48px;
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "sebastienkeroack",
+  "version": "1.0.0",
+  "description": "This project is a custom-built website designed to host and showcase a multilingual personal portfolio.",
+  "author": "Sébastien Kéroack",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SebastienKeroack/sebastienkeroack.git"
+  },
+  "keywords": [
+    "portfolio",
+    "multilingual",
+    "frontend",
+    "backend",
+    "web development",
+    "CSS",
+    "HTML",
+    "JavaScript",
+    "PHP",
+    "SHTML"
+  ],
+  "devDependencies": {
+    "@eslint/compat": "^1.2.8",
+    "@eslint/js": "^9.25.0",
+    "eslint": "^9.25.0",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1",
+    "prettier": "^3.5.3",
+    "stylelint": "^16.18.0",
+    "w3c-html-validator": "^1.8.3"
+  },
+  "scripts": {
+    "lint": "run-p --continue-on-error 'lint:*'",
+    "lint:eslint": "eslint .",
+    "lint:prettier": "prettier . --check --cache",
+    "lint:phpcs": "./include/sebastienkeroack/vendor/bin/phpcs",
+    "lint:stylelint": "stylelint '**/*.css' --ignore-path .gitignore",
+    "lint:html-validator": "html-validator ../public_html --continue --ignore-config=.w3c-ignore",
+    "fix": "run-s --continue-on-error fix:eslint fix:prettier fix:phpcs fix:stylelint",
+    "fix:eslint": "bun run lint:eslint --fix",
+    "fix:prettier": "bun run lint:prettier --write",
+    "fix:phpcs": "./include/sebastienkeroack/vendor/bin/phpcbf",
+    "fix:stylelint": "bun run lint:stylelint --fix",
+    "prepare": "husky"
+  },
+  "license": "Apache-2.0"
+}

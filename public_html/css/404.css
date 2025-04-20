@@ -1,0 +1,19 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+#error404 {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+
+  > img {
+    height: 75px;
+  }
+
+  > span {
+    color: #dc3545;
+    font-size: 4.7em;
+    font-weight: bold;
+    margin-left: 10px;
+  }
+}

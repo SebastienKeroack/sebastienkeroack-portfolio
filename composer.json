@@ -1,0 +1,62 @@
+{
+  "name": "sebastienkeroack/sebastienkeroack",
+  "type": "project",
+  "description": "This project is a custom-built website designed to host and showcase a multilingual personal portfolio.",
+  "authors": [
+    {
+      "name": "Sébastien Kéroack",
+      "email": "dev@sebastienkeroack.com",
+      "homepage": "https://www.sebastienkeroack.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=8.2.12",
+    "phpmailer/phpmailer": ">=6.9.2",
+    "vlucas/phpdotenv": ">=5.6"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": ">=3.11.3",
+    "phpunit/phpunit": ">=11.5.15"
+  },
+  "autoload": {
+    "psr-4": {
+      "SebastienKeroack\\": "include/sebastienkeroack/src/"
+    },
+    "files": [
+      "include/sebastienkeroack/src/Language/translate.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "SebastienKeroack\\Tests\\": "include/sebastienkeroack/tests/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "vendor-dir": "include/sebastienkeroack/vendor"
+  },
+  "scripts": {
+    "lint": "phpcs",
+    "fix": "phpcbf"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "keywords": [
+    "portfolio",
+    "multilingual",
+    "frontend",
+    "backend",
+    "web development",
+    "CSS",
+    "HTML",
+    "JavaScript",
+    "PHP",
+    "SHTML"
+  ],
+  "support": {
+    "issues": "https://github.com/SebastienKeroack/sebastienkeroack/issues",
+    "source": "https://github.com/SebastienKeroack/sebastienkeroack"
+  },
+  "license": "Apache-2.0"
+}

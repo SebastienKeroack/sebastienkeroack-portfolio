@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8">
+
+    <link rel="home" href="https://www.sebastienkeroack.com/en/">
+    <link rel="canonical" href="https://www.sebastienkeroack.com/en/contact">
+  
+    <title>Contact | Sébastien Kéroack</title>
+
+    <!-- HTML Meta Tags -->
+    <meta name="author" content="Sébastien Kéroack">
+    <meta name="description" content="Sébastien Kéroack is a software engineer who builds cutting-edge machine learning solutions, develops high-performance software, and implements scalable, parallel architectures.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://www.sebastienkeroack.com/en/contact">
+    <meta property="og:locale" content="en">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Contact">
+    <meta property="og:site_name" content="Sébastien Kéroack">
+    <meta property="og:description" content="Sébastien Kéroack is a software engineer who builds cutting-edge machine learning solutions, develops high-performance software, and implements scalable, parallel architectures.">
+    <meta property="og:image" content="https://sebastienkeroack.com/img/author-1200x628.jpeg">
+    <meta property="og:see_also" content="https://www.github.com/SebastienKeroack">
+    <meta property="og:see_also" content="https://www.stackoverflow.com/users/6642890/s%C3%A9bastien-k%C3%A9roack">
+    <meta property="og:see_also" content="https://www.freelancer.com/u/sebastienkeroack">
+    <meta property="og:see_also" content="https://www.linkedin.com/in/s%C3%A9bastien-k%C3%A9roack/">
+
+    <!-- Twitter Meta Tags -->
+    <meta property="twitter:url" content="https://www.sebastienkeroack.com/en/contact">
+    <meta property="twitter:domain" content="sebastienkeroack.com">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contact">
+    <meta name="twitter:description" content="Sébastien Kéroack is a software engineer who builds cutting-edge machine learning solutions, develops high-performance software, and implements scalable, parallel architectures.">
+    <meta name="twitter:image" content="https://sebastienkeroack.com/img/author-1200x628.jpeg">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/img/favicon.png">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/components/contact.css">
+
+    <script src="/js/forms/contact.mjs" async type="module"></script>
+    <script src="https://www.google.com/recaptcha/api.js?hl=en&onload=recaptchaOnLoad&render=explicit" async defer></script>
+  </head>
+  <body>
+    <!--#include virtual="/en/_header.html"-->
+    <script>document.getElementById("header-nav-contact").classList.add("hyperlink-selected");</script>
+    <main>
+      <div>
+        <div class="favicon"></div>
+        <h1>Contact</h1>
+      </div>
+      <form id="contact-form" action="contact-form-submit.php" method="post" target="contact-form-target">
+        <label>
+          <input autocomplete="name" maxlength="255" name="name" placeholder="Name" tabindex="1" type="text">
+          <span>Name</span>
+        </label>
+        <label>
+          <input autocomplete="email" maxlength="255" name="email" placeholder="E-mail" tabindex="2" type="email">
+          <span>E-mail</span>
+        </label>
+        <label>
+          <input autocomplete="tel" maxlength="255" name="tel" placeholder="Phone (optional)" tabindex="3" type="tel">
+          <span>Phone (optional)</span>
+        </label>
+        <label>
+          <input maxlength="255" name="subject" placeholder="Subject" tabindex="4" type="text">
+          <span>Subject</span>
+        </label>
+        <label>
+          <textarea name="message" placeholder="Type your message details here..." tabindex="5"></textarea>
+          <span>Message</span>
+        </label>
+        <div class="h-separator"></div>
+        <small>
+          By submitting this form, you agree to be responsible for its content and to comply with local and international laws.
+          You also agree not to use this form to send spam or unsolicited commercial messages.
+        </small>
+        <fieldset>
+          <div class="g-recaptcha" data-tabindex="6"></div>
+          <button disabled type="submit" tabindex="7">Enable JS</button>
+        </fieldset>
+        <iframe name="contact-form-target"></iframe>
+      </form>
+    </main>
+    <!--#include virtual="/_footer.html"-->
+  </body>
+</html>

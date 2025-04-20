@@ -1,0 +1,8 @@
+.husky/_/
+.vscode/
+.workspace/
+node_modules/
+vendor/
+*.lock
+*.html
+*.shtml

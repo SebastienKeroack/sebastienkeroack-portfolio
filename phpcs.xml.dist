@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="SebastienKeroack" xsi:noNamespaceSchemaLocation="phpcs.xsd">
+    <!-- Directories to scan -->
+    <file>include/sebastienkeroack/bootstrap</file>
+    <file>include/sebastienkeroack/languages</file>
+    <file>include/sebastienkeroack/src</file>
+    <file>include/sebastienkeroack/tests</file>
+    <file>public_html</file>
+
+    <!-- Arguments -->
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <arg name="extensions" value="php"/>
+    <arg value="p"/>
+    <arg name="parallel" value="10"/>
+
+    <!-- Rules -->
+    <rule ref="PSR12"/>
+    <rule ref="Squiz.PHP.NonExecutableCode"/>
+    <rule ref="Generic.CodeAnalysis.RequireExplicitBooleanOperatorPrecedence"/>
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="80"/>
+            <property name="absoluteLineLimit" value="120"/>
+        </properties>
+    </rule>
+
+    <!-- Exclude patterns -->
+    <rule ref="Generic.Files.LineLength">
+        <exclude-pattern>*/languages/sebastienkeroack.lang-*.php</exclude-pattern>
+    </rule>
+</ruleset>

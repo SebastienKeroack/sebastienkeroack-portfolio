@@ -1,0 +1,6 @@
+# Ignore Config for w3c-html-validator
+
+/^The character encoding was not declared./
+/^Start tag seen without seeing a doctype first./
+/^Element “head” is missing/
+/^Consider adding a “lang”/

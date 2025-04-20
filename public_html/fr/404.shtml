@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="fr" data-theme="light">
+  <head>
+    <meta charset="UTF-8">
+
+    <link rel="home" href="https://www.sebastienkeroack.com/fr/">
+    <link rel="canonical" href="https://www.sebastienkeroack.com/fr/404">
+  
+    <title>404 - Page introuvable! | Sébastien Kéroack</title>
+
+    <!-- HTML Meta Tags -->
+    <meta name="author" content="Sébastien Kéroack">
+    <meta name="description" content="Désolé, la page que vous recherchez est introuvable!
+      Il est possible que cette page ait été déplacée ou n'ait jamais existé (erreur 404). Essayez de vérifier si l'URL contient des erreurs, puis cliquez sur le bouton d'actualisation de votre navigateur.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta name="robots" content="index, follow">
+  
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://www.sebastienkeroack.com/fr/404">
+    <meta property="og:locale" content="fr">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="404 - Page introuvable!">
+    <meta property="og:site_name" content="Sébastien Kéroack">
+    <meta property="og:description" content="Désolé, la page que vous recherchez est introuvable!
+      Il est possible que cette page ait été déplacée ou n'ait jamais existé (erreur 404). Essayez de vérifier si l'URL contient des erreurs, puis cliquez sur le bouton d'actualisation de votre navigateur.">
+    <meta property="og:image" content="https://s.whc.ca/broken-page.svg">
+    <meta property="og:see_also" content="https://www.github.com/SebastienKeroack">
+    <meta property="og:see_also" content="https://www.stackoverflow.com/users/6642890/s%C3%A9bastien-k%C3%A9roack">
+    <meta property="og:see_also" content="https://www.freelancer.com/u/sebastienkeroack">
+    <meta property="og:see_also" content="https://www.linkedin.com/in/s%C3%A9bastien-k%C3%A9roack/">
+
+    <!-- Twitter Meta Tags -->
+    <meta property="twitter:url" content="https://www.sebastienkeroack.com/fr/404">
+    <meta property="twitter:domain" content="sebastienkeroack.com">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="404 - Page introuvable!">
+    <meta name="twitter:description" content="Désolé, la page que vous recherchez est introuvable!
+      Il est possible que cette page ait été déplacée ou n'ait jamais existé (erreur 404). Essayez de vérifier si l'URL contient des erreurs, puis cliquez sur le bouton d'actualisation de votre navigateur.">
+    <meta name="twitter:image" content="https://s.whc.ca/broken-page.svg">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/img/favicon.png">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/404.css">
+  </head>
+  <body>
+    <!--#include virtual="/fr/_header.html"-->
+    <main>
+      <div id="error404">
+        <img alt="Page cassée" src="https://s.whc.ca/broken-page.svg">
+        <span>404</span>
+      </div>
+      <h1>Désolé, la page que vous recherchez est introuvable!</h1>
+      <p>Il est possible que cette page ait été déplacée ou n'ait jamais existé (erreur 404).<br>Essayez de vérifier si l'URL contient des erreurs, puis cliquez sur le bouton d'actualisation de votre navigateur.</p>
+    </main>
+    <!--#include virtual="/_footer.html"-->
+  </body>
+</html>

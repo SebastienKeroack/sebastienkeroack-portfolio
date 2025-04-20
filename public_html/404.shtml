@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <noscript>
+      <meta http-equiv="refresh" content="0; url=/en/404">
+    </noscript>
+
+    <meta charset="UTF-8">
+
+    <link rel="home" href="https://www.sebastienkeroack.com/en/">
+    <link rel="canonical" href="https://www.sebastienkeroack.com/en/404">
+  
+    <title>Sébastien Kéroack</title>
+
+    <!-- HTML Meta Tags -->
+    <meta name="author" content="Sébastien Kéroack">
+    <meta name="description" content="Sorry, the page you are looking for could not be found!
+      It's possible this page has been moved or never existed to begin with (404 error). Try checking the URL for errors then click your browser's refresh button.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta name="robots" content="noindex, follow">
+  
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://www.sebastienkeroack.com/en/404">
+    <meta property="og:locale" content="en">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="404 - Page can not be found!">
+    <meta property="og:site_name" content="Sébastien Kéroack">
+    <meta property="og:description" content="Sorry, the page you are looking for could not be found!
+      It's possible this page has been moved or never existed to begin with (404 error). Try checking the URL for errors then click your browser's refresh button.">
+    <meta property="og:image" content="https://s.whc.ca/broken-page.svg">
+    <meta property="og:see_also" content="https://www.github.com/SebastienKeroack">
+    <meta property="og:see_also" content="https://www.stackoverflow.com/users/6642890/s%C3%A9bastien-k%C3%A9roack">
+    <meta property="og:see_also" content="https://www.freelancer.com/u/sebastienkeroack">
+    <meta property="og:see_also" content="https://www.linkedin.com/in/s%C3%A9bastien-k%C3%A9roack/">
+
+    <!-- Twitter Meta Tags -->
+    <meta property="twitter:url" content="https://www.sebastienkeroack.com/en/404">
+    <meta property="twitter:domain" content="sebastienkeroack.com">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="404 - Page can not be found!">
+    <meta name="twitter:description" content="Sorry, the page you are looking for could not be found!
+      It's possible this page has been moved or never existed to begin with (404 error). Try checking the URL for errors then click your browser's refresh button.">
+    <meta name="twitter:image" content="https://s.whc.ca/broken-page.svg">
+
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/img/favicon.png">
+  </head>
+  <body>
+    <script>
+      const language = (
+        window.navigator.userLanguage || window.navigator.language).split('-')[0];
+      switch(language) {
+        case "fr":
+          window.location.replace(window.location.origin + "/fr/404");
+          break;
+        default:
+          window.location.replace(window.location.origin + "/en/404");
+          break;
+      }
+    </script>
+  </body>
+</html>

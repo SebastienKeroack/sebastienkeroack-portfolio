@@ -1,0 +1,57 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+body {
+  bottom: 0;
+  position: absolute;
+  width: 100%;
+}
+
+main {
+  margin-top: 0;
+  min-height: 0;
+
+  > div {
+    align-items: center;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 50px;
+    width: 100%;
+
+    > ul {
+      display: flex;
+      flex-direction: column;
+      list-style-type: none;
+      margin: 1em;
+      padding: 0;
+
+      > li:not(:last-child)::after {
+        border-bottom: 0.1em solid var(--font-color-01);
+        border-radius: 1em;
+        content: "";
+        display: inline-block;
+        transform: translateY(-0.2em);
+        width: 100%;
+      }
+    }
+  }
+
+  > div[data-value="true"] {
+    background-color: rgb(0 128 0 / 25%);
+    border: 2px solid rgb(0 128 0);
+  }
+
+  > div[data-value="false"] {
+    background-color: rgb(128 0 0 / 25%);
+    border: 2px solid rgb(128 0 0);
+  }
+}
+
+/* Mobile */
+@media only screen and (width <= 1023.98px) {
+  main > div > ul {
+    font-size: smaller;
+  }
+}
