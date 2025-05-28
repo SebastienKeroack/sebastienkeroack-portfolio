@@ -23,9 +23,9 @@ This guide provides step-by-step instructions to set up the project on a Windows
 
 #### &nbsp;&nbsp;&nbsp;&nbsp;Tested on Windows 11
 
-| Release | Branch / Tag                                                 | Bun   | Composer | XAMPP  |
-| ------- | ------------------------------------------------------------ | ----- | -------- | ------ |
-| Stable  | [main](https://github.com/SebastienKeroack/sebastienkeroack) | 1.2.8 | 2.8.8    | 8.2.12 |
+| Release | Branch / Tag                                                 | Bun    | Composer | XAMPP  |
+| ------- | ------------------------------------------------------------ | ------ | -------- | ------ |
+| Stable  | [main](https://github.com/SebastienKeroack/sebastienkeroack) | 1.2.14 | 2.8.9    | 8.2.12 |
 
 - [Bun: A JavaScript runtime, package manager, test runner and bundler.](https://bun.sh/)
 - [Composer: An application-level dependency manager for the PHP programming language.](https://getcomposer.org/)
@@ -72,6 +72,7 @@ This guide provides step-by-step instructions to set up the project on a Windows
      $htdocsDir = Join-Path (Split-Path $phpDir -Parent) "htdocs"
      ```
    - _Note_: This step is optional if you already know the location of the `htdocs` directory.
+   - _Note_: If you just installed PHP or XAMPP, you may need to restart **Windows PowerShell** so the `php` command is available in your terminal.
 
 2. **Clone the Repository**:
 
@@ -85,9 +86,10 @@ This guide provides step-by-step instructions to set up the project on a Windows
 
    - Create a junction link to the `public_html` directory within the `htdocs` directory:
      ```powershell
-     cmd /c mklink /J "$htdocsDir\public_html" public_html
+     New-Item -ItemType Junction -Path "$htdocsDir\public_html" -Target "public_html"
      ```
-   - _Note_: This allows the `public_html` directory to be accessible from the `htdocs` directory without duplicating files.
+   - _Note_: This allows the `public_html` directory to be accessible from the `htdocs` directory without duplicating files.  
+     If you have built the project, you can also use the `dist\public_html` directory instead.
 
 ---
 
@@ -156,7 +158,7 @@ This guide provides step-by-step instructions to set up the project on a Windows
 
    - If you need the `bun-run-all` package to run multiple scripts concurrently (e.g., `bun run lint` or `bun run fix`), install it globally:
      ```shell
-     bun install -g @3c1u/bun-run-all
+     bun add -g @3c1u/bun-run-all
      ```
 
 ---

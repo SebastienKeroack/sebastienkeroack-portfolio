@@ -1,0 +1,29 @@
+Dimensions:
+- Square format: 1024 x 1024 pixels. All composition and layout decisions must assume a square canvas.
+
+Style:  
+- Futuristic, tech-oriented, clean and minimal, with a slightly academic vibe
+
+Layout Constraint:
+- All key visual elements (icons, diagrams, overlays, text, symbolic objects) must fit within the shape of an uppercase "T", centered inside the square image.  
+  - This means:
+    - A vertical strip ~400px wide down the center
+    - A horizontal band ~300px tall along the top
+  - The "T" layout should guide composition only — no visible borders, frames, or indicators of the T shape.  
+  - Important: all key content must be clearly visible inside the "T" zone, as areas outside may be cropped in thumbnails or previews.
+
+Elements to include (within the "T" zone):
+
+Top Horizontal Band:
+- A subtle icon of a neural network graph — nodes and connections, rendered as glowing dots and lines in soft neon blue and red
+- Overlaid stylized equation fragments or variable symbols (like ∇L, W₁, σ(x)), semi-transparent, hinting at scientific rigor
+
+Central Vertical Strip:
+- A 3D isometric schematic of a neural network layer — layers stacked vertically like slices of a cube, glowing edges, clean node-to-node lines
+- Embedded code-like overlays (e.g., `#pragma omp parallel`, `forward_pass()`, `train()`) floating subtly in the middle section
+- A transparent cylinder or beam descending from the top element to a stylized chip or brain outline at the bottom, representing "deployment"
+
+Background:  
+- Dark theme with soft ambient gradients — deep blue from the bottom right, dark red from the top left
+- Fine grid overlay, barely visible, with faint circuit-like traces etched into the background
+- A very soft glow behind the central "T" zone to guide visual focus

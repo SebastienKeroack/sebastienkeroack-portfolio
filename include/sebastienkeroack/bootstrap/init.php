@@ -10,7 +10,7 @@
  * @copyright
  * 2025 Sébastien Kéroack. All rights reserved.
  * @license
- * https://github.com/SebastienKeroack/sebastienkeroack/blob/main/LICENSE
+ * https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/LICENSE
  * Apache License
  */
 
@@ -18,12 +18,12 @@
  require_once 'sebastienkeroack/vendor/autoload.php';
 
 // This file must be included first as the constants are used.
-require_once "sebastienkeroack/bootstrap/config.php";
+require_once 'sebastienkeroack/bootstrap/config.php';
 
 // Sets up custom error handling mechanisms.
 // Manage errors in a controlled manner, providing better error reporting
 // and handling.
-require_once "sebastienkeroack/bootstrap/error.php";
+require_once 'sebastienkeroack/bootstrap/error.php';
 
 // Loads the language dictionary based on an environment variable declared in a
 // '.htaccess' file. The language file is included dynamically based

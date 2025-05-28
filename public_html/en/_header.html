@@ -24,3 +24,21 @@
     <div></div>
   </nav>
 </header>
+<script>
+  (() => {
+    // Get the canonical link element
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) return;
+
+    // Get the last part of the URL after the last slash
+    // and use it to select the corresponding navigation link
+    const page = canonical.href.split("/").slice(-1)[0];
+    if (!page) return;
+
+    // Add the "hyperlink-selected" class to the corresponding link
+    // to highlight it in the navigation
+    document
+      .getElementById(`header-nav-${page}`)
+      .classList.add("hyperlink-selected");
+  })();
+</script>

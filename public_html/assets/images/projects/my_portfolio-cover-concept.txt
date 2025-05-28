@@ -1,0 +1,26 @@
+Dimensions:
+- Square format: 1024 x 1024 pixels. All composition and layout decisions must assume a square canvas.
+
+Style:  
+- Futuristic, tech-oriented, clean and minimal, with a slightly academic vibe
+
+Layout Constraint:
+- All key visual elements (icons, diagrams, overlays, text, symbolic objects) must fit within the shape of an uppercase "T", centered inside the square image.  
+  - This means:
+    - A vertical strip ~400px wide down the center
+    - A horizontal band ~300px tall along the top
+  - The "T" layout should guide composition only — no visible borders, frames, or indicators of the T shape.  
+  - Important: all key content must be clearly visible inside the "T" zone, as areas outside may be cropped in thumbnails or previews.
+
+Elements to include (within the "T" zone):
+- A stylized globe made of interconnected nodes and lines to symbolize multilingual global reach and content localization
+- Floating tabs showcasing light/dark mode toggles, language names (e.g., English and Français), and browser preview windows
+- HTML code snippets subtly integrated into thin flowing lines or behind-glass panels
+    '<link rel="home" href="https://www.sebastienkeroack.com/">'
+    '<meta name="author" content="Sébastien Kéroack">'
+- A small reCAPTCHA v2 shield icon
+- Modular block diagrams to represent scalable architecture
+
+Background:
+- A dark theme with subtle blue and red ambient tones fading from the edges
+- Fine grid pattern and ghostly circuit lines across the entire canvas

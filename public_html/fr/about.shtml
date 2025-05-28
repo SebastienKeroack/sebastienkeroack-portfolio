@@ -3,56 +3,56 @@
   <head>
     <meta charset="UTF-8">
 
+    <!-- Page Title -->
+    <title>Sébastien Kéroack</title>
+
+    <!-- Canonical & Home Links -->
     <link rel="home" href="https://www.sebastienkeroack.com/fr/">
     <link rel="canonical" href="https://www.sebastienkeroack.com/fr/about">
 
-    <title>Sébastien Kéroack</title>
-
-    <!-- HTML Meta Tags -->
+    <!-- Primary Meta Tags -->
     <meta name="author" content="Sébastien Kéroack">
-    <meta name="description" content="Sébastien Kéroack est un ingénieur logiciel spécialisé dans le développement de solutions d'apprentissage automatique avancées, la création de logiciels haute performance et la mise en œuvre d'architectures évolutives et parallèles.">
+    <meta name="description" content="Sébastien Kéroack est un développeur logiciel spécialisé dans le développement de solutions d'apprentissage automatique avancées, la création de logiciels haute performance et la mise en œuvre d'architectures évolutives et parallèles.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="robots" content="index, follow">
 
-    <!-- Facebook Meta Tags -->
+    <!-- Open Graph / Facebook -->
     <meta property="og:url" content="https://www.sebastienkeroack.com/fr/about">
     <meta property="og:locale" content="fr">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Sébastien Kéroack">
     <meta property="og:site_name" content="Sébastien Kéroack">
-    <meta property="og:description" content="Sébastien Kéroack est un ingénieur logiciel spécialisé dans le développement de solutions d'apprentissage automatique avancées, la création de logiciels haute performance et la mise en œuvre d'architectures évolutives et parallèles.">
-    <meta property="og:image" content="https://sebastienkeroack.com/img/author-1200x628.jpeg">
+    <meta property="og:description" content="Sébastien Kéroack est un développeur logiciel spécialisé dans le développement de solutions d'apprentissage automatique avancées, la création de logiciels haute performance et la mise en œuvre d'architectures évolutives et parallèles.">
+    <meta property="og:image" content="https://sebastienkeroack.com/assets/images/authors/author-1200x628.jpeg">
     <meta property="og:see_also" content="https://www.github.com/SebastienKeroack">
     <meta property="og:see_also" content="https://www.stackoverflow.com/users/6642890/s%C3%A9bastien-k%C3%A9roack">
     <meta property="og:see_also" content="https://www.freelancer.com/u/sebastienkeroack">
     <meta property="og:see_also" content="https://www.linkedin.com/in/s%C3%A9bastien-k%C3%A9roack/">
 
-    <!-- Twitter Meta Tags -->
-    <meta property="twitter:url" content="https://www.sebastienkeroack.com/fr/about">
-    <meta property="twitter:domain" content="sebastienkeroack.com">
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Sébastien Kéroack">
-    <meta name="twitter:description" content="Sébastien Kéroack est un ingénieur logiciel spécialisé dans le développement de solutions d'apprentissage automatique avancées, la création de logiciels haute performance et la mise en œuvre d'architectures évolutives et parallèles.">
-    <meta name="twitter:image" content="https://sebastienkeroack.com/img/author-1200x628.jpeg">
 
+    <!-- Favicons -->
     <link rel="icon" href="/favicon.ico">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/img/favicon.png">
+    <link rel="apple-touch-icon" href="/assets/images/icons/favicon-1x1.png">
 
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="stylesheet" href="/css/about.css">
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/assets/styles/main.css">
+    <link rel="stylesheet" href="/assets/styles/about.css">
 
-    <script src="/js/utilities/fade-in.js" defer></script>
+    <!-- Scripts -->
+    <script src="/assets/scripts/utilities/theme-quick-init.js"></script>
+    <script src="/assets/scripts/utilities/fade-in.js" defer></script>
   </head>
   <body>
     <!--#include virtual="/fr/_header.html"-->
-    <script>document.getElementById("header-nav-about").classList.add("hyperlink-selected");</script>
     <main>
       <div>
         <div id="author-card">
-          <img alt="Fôret" src="/img/forest-1920x1280.jpg">
-          <img alt="Sébastien Kéroack" class="rounded" src="/img/author-800x800.jpg">
+          <img alt="Fôret" src="/assets/images/backgrounds/forest-1920x1280.jpeg">
+          <img alt="Sébastien Kéroack" class="rounded" src="/assets/images/authors/author-800x800.jpeg">
           <h1>
             Sébastien
             <br>
@@ -88,7 +88,7 @@
             </a>
           </nav>
         </div>
-        <img alt="code QR" class="show-on-print" src="/img/qr-code-to-sebastienkeroack.com-256x256.png">
+        <img alt="code QR" class="show-on-print" src="/assets/images/qr-codes/sebastienkeroack.com-238x238.jpeg">
       </div>
       <div id="author-bio">
         <h3 class="try-fade-in">Allo</h3>

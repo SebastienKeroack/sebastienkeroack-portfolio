@@ -1,5 +1,5 @@
 {
-  "name": "sebastienkeroack/sebastienkeroack",
+  "name": "sebastienkeroack/sebastienkeroack-portfolio",
   "type": "project",
   "description": "This project is a custom-built website designed to host and showcase a multilingual personal portfolio.",
   "authors": [
@@ -48,15 +48,15 @@
     "frontend",
     "backend",
     "web development",
-    "CSS",
-    "HTML",
-    "JavaScript",
-    "PHP",
-    "SHTML"
+    "css",
+    "html",
+    "javascript",
+    "php",
+    "ssi"
   ],
   "support": {
-    "issues": "https://github.com/SebastienKeroack/sebastienkeroack/issues",
-    "source": "https://github.com/SebastienKeroack/sebastienkeroack"
+    "issues": "https://github.com/SebastienKeroack/sebastienkeroack-portfolio/issues",
+    "source": "https://github.com/SebastienKeroack/sebastienkeroack-portfolio"
   },
   "license": "Apache-2.0"
 }

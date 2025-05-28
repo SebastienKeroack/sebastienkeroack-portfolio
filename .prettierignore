@@ -1,6 +1,7 @@
 .husky/_/
 .vscode/
 .workspace/
+dist/
 node_modules/
 vendor/
 *.lock

@@ -1,11 +1,11 @@
 {
-  "name": "sebastienkeroack",
-  "version": "1.0.0",
+  "name": "sebastienkeroack-portfolio",
+  "version": "0.9.25151-25+d0c2762",
   "description": "This project is a custom-built website designed to host and showcase a multilingual personal portfolio.",
   "author": "Sébastien Kéroack",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SebastienKeroack/sebastienkeroack.git"
+    "url": "https://github.com/SebastienKeroack/sebastienkeroack-portfolio.git"
   },
   "keywords": [
     "portfolio",
@@ -13,30 +13,34 @@
     "frontend",
     "backend",
     "web development",
-    "CSS",
-    "HTML",
-    "JavaScript",
-    "PHP",
-    "SHTML"
+    "css",
+    "html",
+    "javascript",
+    "php",
+    "ssi"
   ],
   "devDependencies": {
-    "@eslint/compat": "^1.2.8",
-    "@eslint/js": "^9.25.0",
-    "eslint": "^9.25.0",
-    "globals": "^16.0.0",
+    "@eslint/compat": "^1.2.9",
+    "@eslint/js": "^9.27.0",
+    "bun-types": "^1.2.15",
+    "esbuild": "^0.25.5",
+    "eslint": "^9.27.0",
+    "globals": "^16.2.0",
+    "html-minifier-terser": "^7.2.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.1",
+    "lint-staged": "^15.5.2",
     "prettier": "^3.5.3",
-    "stylelint": "^16.18.0",
+    "stylelint": "^16.20.0",
     "w3c-html-validator": "^1.8.3"
   },
   "scripts": {
-    "lint": "run-p --continue-on-error 'lint:*'",
+    "build": "bun run tools/build.mjs",
+    "lint": "run-p --continue-on-error lint:eslint lint:prettier lint:phpcs lint:stylelint lint:html-validator",
     "lint:eslint": "eslint .",
     "lint:prettier": "prettier . --check --cache",
     "lint:phpcs": "./include/sebastienkeroack/vendor/bin/phpcs",
     "lint:stylelint": "stylelint '**/*.css' --ignore-path .gitignore",
-    "lint:html-validator": "html-validator ../public_html --continue --ignore-config=.w3c-ignore",
+    "lint:html-validator": "html-validator public_html --continue --ignore-config=.w3c-ignore",
     "fix": "run-s --continue-on-error fix:eslint fix:prettier fix:phpcs fix:stylelint",
     "fix:eslint": "bun run lint:eslint --fix",
     "fix:prettier": "bun run lint:prettier --write",

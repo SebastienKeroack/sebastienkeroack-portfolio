@@ -4,9 +4,11 @@ Options -Indexes
 RewriteEngine On
 RewriteBase /
 
-# Matches any URL that ends with .shtml and rewrites it to remove the .shtml extension and redirect the user to the new URL
-RewriteRule ^(.+).shtml$ /$1 [L,R]
-# Checks if the requested filename with an added .shtml extension exists as a regular file
+# Redirect any request ending with .shtml to the same path without .shtml.
+# [L,R] means this is the last rule if matched and sends a 302 redirect.
+RewriteRule ^(.+)\.shtml$ /$1 [L,R]
+
+# If a file with .shtml extension exists for the requested path,
+# rewrite the URL internally to serve that .shtml file.
 RewriteCond %{REQUEST_FILENAME}.shtml -f
-# Rewrites the URL to append the .shtml extension
 RewriteRule ^(.*)/?$ /$1.shtml [END]

@@ -14,6 +14,12 @@ const ignorePath = path.resolve(__dirname, ".prettierignore");
  */
 export default defineConfig([
   includeIgnoreFile(ignorePath),
-  { files: ["**/*.{js,mjs}"], languageOptions: { globals: globals.browser } },
-  { files: ["**/*.{js,mjs}"], plugins: { js }, extends: ["js/recommended"] },
+  {
+    files: ["**/*.{js,mjs}"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node, Bun: false },
+    },
+    plugins: { js },
+    extends: ["js/recommended"],
+  },
 ]);

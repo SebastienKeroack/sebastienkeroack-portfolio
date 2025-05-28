@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./public_html",
+    "paths": { "/assets/scripts/*": ["./assets/scripts/*"] },
+    "types": ["bun-types"]
+  }
+}

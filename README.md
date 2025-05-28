@@ -11,7 +11,7 @@ It is accessible at [sebastienkeroack.com](https://sebastienkeroack.com).
 ## Table of Contents
 
 - [Installation](#Installation)
-  - [Windows](https://github.com/SebastienKeroack/sebastienkeroack/blob/main/docs/INSTALLATION-GUIDE-FOR-WINDOWS.md "Installation on Windows")
+  - [Windows](https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/docs/INSTALLATION-GUIDE-FOR-WINDOWS.md "Installation on Windows")
 - [Features](#Features)
 - [License](#License)
 

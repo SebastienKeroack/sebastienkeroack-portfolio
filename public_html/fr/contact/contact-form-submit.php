@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<link rel="stylesheet" href="/css/main.css">
-<link rel="stylesheet" href="/css/components/contact-form-submit.css">
+<link rel="stylesheet" href="/assets/styles/main.css">
+<link rel="stylesheet" href="/assets/styles/components/contact-form-submit.css">
 
 <?php
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' && IN_PRODUCTION) {
