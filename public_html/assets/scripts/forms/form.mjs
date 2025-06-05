@@ -26,15 +26,22 @@ import { appTheme, getTheme } from "/assets/scripts/theme.mjs";
  * @param {boolean} empty - Whether the input is empty.
  */
 export function setInputState(classes, valid, empty) {
+  // Remove any previous validation classes.
   classes.remove("input-invalid");
   classes.remove("input-valid");
 
+  // If the input is empty, do not add any validation class.
   if (empty) return;
 
+  // Add the appropriate validation class based on validity.
   if (valid) classes.add("input-valid");
   else classes.add("input-invalid");
 }
 
+/**
+ * Base class for handling form logic, validation, and submission.
+ * Supports local storage caching, language adaptation, and theme integration.
+ */
 export class Form {
   form = null; // The form element.
   target = null; // The iframe used for post-submission validation.
@@ -50,12 +57,18 @@ export class Form {
    * @param {string} name - The ID of the form element.
    */
   constructor(name) {
+    // Get the form element by its ID.
     this.form = document.getElementById(name);
+
+    // Find the iframe used for post-submission validation.
     this.target = this.form.querySelector(`iframe[name='${name}-target']`);
+    // Listen for the iframe's load event to trigger post-validation.
     this.target.addEventListener("load", this.postValidation.bind(this), true);
 
+    // Find the submit button and set up its click event.
     this.submitBtn = this.form.querySelector("button[type='submit']");
     this.submitBtn.addEventListener("click", this.submit.bind(this));
+    // Set the button label based on the current language.
     this.submitBtn.innerHTML = IS_FRENCH ? "Soumettre" : "Submit Now";
   }
 
@@ -67,17 +80,23 @@ export class Form {
    * @param {boolean} [options.store=false] - Whether to cache the input value.
    */
   add({ input, store = false, ...options }) {
+    // Create a unique key for local storage if caching is enabled.
     const register = (options.register =
       store ? `${this.name}-store-${input.name}` : "");
+    // Define the change event handler for the input.
     const eventChange = () => this.inputChange({ input, ...options });
 
+    // If caching is enabled, restore the value from local storage.
     if (store) {
       this.registers.push(register);
       input.value = localStorage.getItem(register) ?? "";
     }
 
+    // Run the change handler once to initialize validation state.
     eventChange();
+    // Listen for changes to the input value.
     input.addEventListener("change", eventChange);
+    // Add the input to the list of tracked inputs.
     this.inputs.push(input);
   }
 
@@ -85,6 +104,7 @@ export class Form {
    * Clears all cached input values from local storage.
    */
   clearLocalStorage() {
+    // Iterate through all registered keys and clear their values.
     this.registers.forEach((item) => {
       localStorage.setItem(item, "");
     });
@@ -101,13 +121,17 @@ export class Form {
    * @returns {boolean} Whether the input is valid.
    */
   inputChange({ input, regex = "", register = "", optional = false }) {
+    // Get the current value of the input.
     const value = input.value;
+    // Determine if the input is valid based on value, regex, and optional flag.
     const found = Boolean(
       (!!value || optional) && (!regex || value.match(regex)),
     );
 
+    // If caching is enabled, store the value in local storage.
     if (register) localStorage.setItem(register, input.value);
 
+    // Update the input's validation state visually.
     setInputState(input.classList, found, !value);
 
     return found;
@@ -117,6 +141,7 @@ export class Form {
    * Submits the form by triggering the native form submission.
    */
   submit() {
+    // Use the browser's built-in form submission.
     this.form.submit();
   }
 
@@ -127,11 +152,14 @@ export class Form {
    * @returns {Promise<boolean>} Whether the validation was successful.
    */
   async postValidation() {
+    // Get the root element of the iframe's content.
     const innerHTML = this.target.contentDocument.firstElementChild;
+    // Find the element that contains the validation result.
     const element = innerHTML.querySelector("div[data-value]");
+    // Determine if the submission was successful.
     const success = element.getAttribute("data-value") === "true";
 
-    // Set the direction, theme and language of the iframe.
+    // Set the direction, theme, and language of the iframe.
     innerHTML.setAttribute("dir", "ltr");
     innerHTML.setAttribute("lang", LANGUAGE);
     innerHTML.setAttribute("data-theme", getTheme());
@@ -151,6 +179,7 @@ export class Form {
     if (success) {
       // Prevent the button from shrinking when changing its content.
       this.submitBtn.style.width = getComputedStyle(this.submitBtn).width;
+      // Update the button label to indicate successful submission.
       this.submitBtn.innerHTML = IS_FRENCH ? "Soumis!" : "Submitted!";
 
       // Clear the cache since the form was successfully submitted.

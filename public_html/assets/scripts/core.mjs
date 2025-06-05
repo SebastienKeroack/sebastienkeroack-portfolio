@@ -12,8 +12,13 @@
  * Apache License
  */
 
-// Detects if the application is running in a local development environment.
-// Checks the hostname to determine if it matches common local network patterns.
+/**
+ * Detects if the application is running in a local development environment.
+ * Checks the hostname to determine if it matches common local network patterns.
+ *
+ * @constant
+ * @type {boolean}
+ */
 export const IS_LOCAL = (() => {
   const hostname = window.location.hostname;
 
@@ -33,8 +38,13 @@ export const IS_LOCAL = (() => {
   );
 })();
 
-// Defines the reCAPTCHA site key based on the environment.
-// Uses a testing key for local development and a production key otherwise.
+/**
+ * Defines the reCAPTCHA site key based on the environment.
+ * Uses a testing key for local development and a production key otherwise.
+ *
+ * @constant
+ * @type {string}
+ */
 export const SITE_KEY =
   IS_LOCAL ?
     // reCAPTCHA testing key for local environments.
@@ -42,10 +52,20 @@ export const SITE_KEY =
     // reCAPTCHA production key for live environments.
   : "6LeXw84kAAAAAITz52RWy9XIblmKKZ7rrmPbVmIZ";
 
-// Extracts the language code from the URL path.
-// Assumes the language code is the first two characters of the path.
+/**
+ * Extracts the language code from the URL path.
+ * Assumes the language code is the first two characters of the path.
+ *
+ * @constant
+ * @type {string}
+ */
 export const LANGUAGE = window.location.pathname.substring(1, 3);
 
-// Determines if the current language is French.
-// Compares the extracted language code to "fr".
+/**
+ * Determines if the current language is French.
+ * Compares the extracted language code to "fr".
+ *
+ * @constant
+ * @type {boolean}
+ */
 export const IS_FRENCH = LANGUAGE === "fr";

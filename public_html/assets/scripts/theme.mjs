@@ -28,10 +28,19 @@ export const getTheme = () => {
   );
 };
 
+/**
+ * Class to manage application theme state and provide utilities for theme
+ * switching, inversion, and listener management. Automatically detects system
+ * theme changes and updates the application accordingly.
+ */
 class Theme {
-  // Holds an array of listeners that respond to theme changes.
+  /** @type {Function[]} Holds an array of listeners for theme changes. */
   listeners = [];
 
+  /**
+   * Creates a new Theme instance and sets up system theme change detection.
+   * Automatically updates stored theme when system preference changes.
+   */
   constructor() {
     // Detects changes in the user's preferred color scheme.
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -79,5 +88,8 @@ class Theme {
   }
 }
 
-// Creates a instance of the Theme class to manage the application's theme.
+/**
+ * Creates an instance of the Theme class to manage the application's theme.
+ * Exported for use throughout the application.
+ */
 export const appTheme = new Theme();

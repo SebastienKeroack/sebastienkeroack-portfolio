@@ -12,35 +12,30 @@
  * Apache License
  */
 
-import { join, resolve } from "node:path";
-import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
-import { incrementVersion } from "./bump-version.mjs";
+import { exists } from "node:fs/promises";
+import { basename, join } from "node:path";
+import { Version } from "./version.mjs";
 import { pack } from "./packer.mjs";
 
+// Log build start time for debugging and monitoring purposes
 console.log(`Build started at: ${new Date().toLocaleString()}`);
 
-const root = resolve(fileURLToPath(import.meta.url), "../..");
-const srcDir = "public_html";
-const outDir = "dist";
-const versionPath = "version.yaml";
-const packagePath = "package.json";
-const manifestPath = join(outDir, "manifest.json");
+// Check if the source directory exists before proceeding
+if (!(await exists(globalThis.path.srcDir)))
+  throw new Error(
+    `Source directory "${globalThis.path.srcDir}" does not exist.`,
+  );
 
-const paths = {
-  root,
-  srcDir,
-  outDir,
-  versionPath,
-  packagePath,
-  manifestPath,
-};
+// Increment version numbers and update version.yaml and package.json
+const version = await Version.load(globalThis.path.versionPath);
+await version.bump();
+await version.write(globalThis.path.versionPath, globalThis.path.packagePath);
+console.log("Version updated to", version.toString());
 
-if (!existsSync(paths.srcDir))
-  throw new Error(`Source directory "${paths.srcDir}" does not exist.`);
-
-const version = await incrementVersion(paths.versionPath, paths.packagePath);
-
+// Check if the build should be forced based on CLI arguments
 const force = process.argv.includes("--force");
-await pack(paths, version, force);
+
+// Run the packer to process assets and generate the build output
+const srcPublicDir = globalThis.path.srcDir;
+const outPublicDir = join(globalThis.path.outDir, basename(srcPublicDir));
+await pack(srcPublicDir, outPublicDir, version, force);

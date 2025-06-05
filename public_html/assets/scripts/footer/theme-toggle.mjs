@@ -15,6 +15,8 @@
 import { appTheme } from "/assets/scripts/theme.mjs";
 import { IS_FRENCH } from "/assets/scripts/core.mjs";
 
+// Initializes the theme toggle button in the footer.
+// Sets up event listeners for toggling the theme and updating the tooltip.
 document.addEventListener("DOMContentLoaded", () => {
   // Get the theme toggle button element by its ID.
   const sunAndMoon = document.getElementById("sun-and-moon");
@@ -27,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // The tooltip text is set dynamically based on the new theme and language.
   appTheme.addListener(
     (newTheme) =>
+      // Set the tooltip title based on the current theme and language.
       sunAndMoon.setAttribute(
         "title",
         {

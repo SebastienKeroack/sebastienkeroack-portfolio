@@ -55,7 +55,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 function Confirm-Action {
     param (
-        [string]$Message,
+        [string]$Message
     )
 
     $response = Read-Host "$Message [Y/N]:"
@@ -65,7 +65,7 @@ function Confirm-Action {
 function Add-Configuration {
     param (
         [string]$FilePath,
-        [string]$ConfigurationBlock,
+        [string]$ConfigurationBlock
     )
 
     Write-Host "Preparing to modify file: $FilePath" -ForegroundColor Cyan
@@ -86,7 +86,7 @@ function Add-Configuration {
 function Copy-File {
     param (
         [string]$SourcePath,
-        [string]$TargetPath,
+        [string]$TargetPath
     )
 
     Write-Host "Preparing to replace or copy file:" -ForegroundColor Cyan

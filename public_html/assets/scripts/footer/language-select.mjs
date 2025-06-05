@@ -14,6 +14,9 @@
 
 import { LANGUAGE } from "/assets/scripts/core.mjs";
 
+// Initializes the language selection dropdown in the footer.
+// Sets the current language and updates the URL when the user selects
+// a different language.
 document.addEventListener("DOMContentLoaded", () => {
   // Select the dropdown element for language selection in the footer.
   const languages = document.querySelector("select[name='userlang']");

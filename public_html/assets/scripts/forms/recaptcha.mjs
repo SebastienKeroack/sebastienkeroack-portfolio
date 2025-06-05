@@ -17,6 +17,10 @@ import { Form, setInputState } from "/assets/scripts/forms/form.mjs";
 import { SITE_KEY } from "/assets/scripts/core.mjs";
 import { appTheme, getTheme } from "/assets/scripts/theme.mjs";
 
+/**
+ * Class for forms with integrated reCAPTCHA v2 support.
+ * Handles reCAPTCHA rendering, validation, and submit button state.
+ */
 export class ReCAPTCHAV2 extends Form {
   // Holds the reCAPTCHA container element.
   rc = null;
@@ -29,6 +33,8 @@ export class ReCAPTCHAV2 extends Form {
 
   /**
    * Constructor for the ReCAPTCHAV2 class.
+   * Initializes the form, selects the reCAPTCHA container, and disables
+   * the submit button until validation is complete.
    * @param {string} name - The name of the form.
    */
   constructor(name) {
@@ -46,6 +52,7 @@ export class ReCAPTCHAV2 extends Form {
    * @param {Object} options - Input field options.
    */
   add({ input, ...options }) {
+    // Track if the input is optional or required.
     this.#recaptcha[input.name] = options["optional"] ?? false;
     super.add({ input, ...options });
   }
@@ -55,8 +62,11 @@ export class ReCAPTCHAV2 extends Form {
    * @param {Object} options - Input field options.
    */
   inputChange({ input, ...options }) {
+    // Call the parent method to handle validation.
     const found = super.inputChange({ input, ...options });
+    // Update the recaptcha state for this input.
     this.#recaptcha[input.name] = found;
+    // Try to update the submit button state.
     this.tryUpdateSubmitBtnState();
   }
 
@@ -65,7 +75,9 @@ export class ReCAPTCHAV2 extends Form {
    * @param {boolean} ready - Whether the form is ready for submission.
    */
   setSubmitBtnState(ready) {
+    // Enable or disable the submit button.
     this.submitBtn.disabled = !ready;
+    // Update the button's visual state.
     setInputState(this.submitBtn.classList, ready, true);
   }
 
@@ -73,6 +85,7 @@ export class ReCAPTCHAV2 extends Form {
    * Attempts to update the submit button state if reCAPTCHA is completed.
    */
   tryUpdateSubmitBtnState() {
+    // Only update if reCAPTCHA is filled.
     if (!this.#recaptcha.fill) return;
     this.updateSubmitBtnState();
   }
@@ -81,7 +94,9 @@ export class ReCAPTCHAV2 extends Form {
    * Updates the submit button state based on all validation criteria.
    */
   updateSubmitBtnState() {
+    // Do not update if the form has already been submitted.
     if (this.submitted) return;
+    // Enable the button only if all fields and reCAPTCHA are valid.
     this.setSubmitBtnState(
       Object.values(this.#recaptcha).every((value) => value),
     );
@@ -93,7 +108,9 @@ export class ReCAPTCHAV2 extends Form {
    * @param {boolean} done - Whether reCAPTCHA is completed.
    */
   rcCallback(done) {
+    // Update the reCAPTCHA filled state.
     this.#recaptcha.fill = done;
+    // Update the submit button state accordingly.
     this.updateSubmitBtnState();
   }
 
@@ -103,6 +120,7 @@ export class ReCAPTCHAV2 extends Form {
    * @param {number} tabindex - The tabindex for accessibility.
    */
   rcRender(tabindex) {
+    // Render the reCAPTCHA widget using the global grecaptcha object.
     // eslint-disable-next-line no-undef
     grecaptcha.render(this.rc, {
       callback: () => this.rcCallback(true),
@@ -118,9 +136,11 @@ export class ReCAPTCHAV2 extends Form {
 
     // Update the reCAPTCHA theme dynamically when the application theme changes.
     appTheme.addListener((newTheme) => {
+      // Replace the theme in the iframe src URL.
       const path = rcFrame.src.replace(/theme=[a-z]+/, `theme=${newTheme}`);
       rcFrame.setAttribute("src", path);
-      this.rcCallback(false); // Reset reCAPTCHA state on theme change.
+      // Reset reCAPTCHA state on theme change.
+      this.rcCallback(false);
     });
   }
 
@@ -128,7 +148,9 @@ export class ReCAPTCHAV2 extends Form {
    * Submits the form and disables the submit button.
    */
   submit() {
+    // Call the parent submit method.
     super.submit();
+    // Disable the submit button after submission.
     this.setSubmitBtnState(false);
   }
 
@@ -138,8 +160,10 @@ export class ReCAPTCHAV2 extends Form {
    * @returns {Promise<boolean>} - Whether the validation was successful.
    */
   async postValidation() {
+    // Call the parent postValidation method.
     const success = super.postValidation();
 
+    // If validation failed, re-enable the button after a delay.
     if (!success) {
       // Wait for 2 seconds before re-enabling the submit button.
       await new Promise((r) => setTimeout(r, 2000));

@@ -2,7 +2,8 @@
 .husky/_/
 .vscode/
 .workspace/
+*.lock
 dist/
 node_modules/
+temp/
 vendor/
-*.lock
