@@ -1,0 +1,14 @@
+# @see https://github.com/lint-staged/lint-staged#configuration
+'*.css':
+  - stylelint --config core/bun/.stylelintrc.yaml --ignore-path .gitignore
+  - prettier --config core/bun/.prettierrc.yaml --ignore-path core/bun/.prettierignore --check
+#'*.{html,shtml}':
+#  - html-validator --ignore-config=core/bun/.w3c-ignore
+'*.{json,md,yaml}':
+  - prettier --config core/bun/.prettierrc.yaml --ignore-path core/bun/.prettierignore --check
+'*.{js,mjs}':
+  - eslint --config core/bun/eslint.config.js
+  - prettier --config core/bun/.prettierrc.yaml --ignore-path core/bun/.prettierignore --check
+'*.php':
+  - php core/php/vendor/bin/phpcs --standard=core/php/phpcs.xml
+  - prettier --config core/bun/.prettierrc.yaml --ignore-path core/bun/.prettierignore --check

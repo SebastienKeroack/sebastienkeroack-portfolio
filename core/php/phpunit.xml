@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+    colors="true"
+    displayDetailsOnTestsThatTriggerWarnings="true"
+    displayDetailsOnSkippedTests="true"
+    displayDetailsOnTestsThatTriggerNotices="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory suffix=".unit.test.php">test</directory>
+        </testsuite>
+        <testsuite name="Mock">
+            <directory suffix=".mock.test.php">test</directory>
+        </testsuite>
+    </testsuites>
+
+    <source>
+      <include>
+        <directory suffix=".php">src</directory>
+      </include>
+    </source>
+
+    <php>
+        <ini name="display_errors" value="On"/>
+        <ini name="display_startup_errors" value="On"/>
+        <ini name="error_reporting" value="E_ALL"/>
+    </php>
+</phpunit>

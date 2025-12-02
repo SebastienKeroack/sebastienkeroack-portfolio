@@ -1,0 +1,32 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+.fade-in,
+.fade-in-item {
+  opacity: 0;
+}
+
+.fade-in {
+  animation: do-fade-in 3s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes do-fade-in {
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@media print {
+  .fade-in-item {
+    opacity: 1;
+  }
+}

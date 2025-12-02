@@ -1,0 +1,11 @@
+# @see https://bun.sh/docs/runtime/bunfig
+preload = ["core/bun/bootstrap/init.mjs"]
+
+[install]
+auto = "disable"
+saveTextLockfile = true
+
+[test]
+root = "core/bun/test"
+preload = ["core/bun/bootstrap/init.mjs", "core/bun/bootstrap/preload-test.mjs"]
+coverage = false

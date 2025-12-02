@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8">
+
+    <!-- Page Title -->
+    <title>Projects | Sébastien Kéroack</title>
+
+    <!-- Canonical & Home Links -->
+    <link rel="home" href="https://www.sebastienkeroack.com/en/">
+    <link rel="canonical" href="https://www.sebastienkeroack.com/en/projects">
+
+    <!-- Primary Meta Tags -->
+    <meta name="author" content="Sébastien Kéroack">
+    <meta name="description" content="Sébastien Kéroack is a software developer who builds cutting-edge machine learning solutions, develops high-performance software, and implements scalable, parallel architectures.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:url" content="https://www.sebastienkeroack.com/en/projects">
+    <meta property="og:locale" content="en">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Projects">
+    <meta property="og:site_name" content="Sébastien Kéroack">
+    <meta property="og:description" content="Sébastien Kéroack is a software developer who builds cutting-edge machine learning solutions, develops high-performance software, and implements scalable, parallel architectures.">
+    <meta property="og:image" content="https://sebastienkeroack.com/assets/images/authors/author-1200x628.jpeg">
+    <meta property="og:see_also" content="https://www.github.com/SebastienKeroack">
+    <meta property="og:see_also" content="https://www.stackoverflow.com/users/6642890/s%C3%A9bastien-k%C3%A9roack">
+    <meta property="og:see_also" content="https://www.freelancer.com/u/sebastienkeroack">
+    <meta property="og:see_also" content="https://www.linkedin.com/in/s%C3%A9bastien-k%C3%A9roack/">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- Favicons -->
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/images/icons/favicon-1x1.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/assets/styles/main.css">
+    <link rel="stylesheet" href="/assets/styles/components/projects.css">
+
+    <!-- Scripts -->
+    <script src="/assets/scripts/utilities/theme-quick-init.js"></script>
+  </head>
+  <body>
+    <!--#include virtual="/en/_header.html"-->
+    <main>
+      <div>
+        <div class="favicon"></div>
+        <h1>Personal projects</h1>
+      </div>
+      <!--#include virtual="/en/projects/_2023_my_portfolio.html"-->
+      <!--#include virtual="/en/projects/_2021_neural_architecture_search.html"-->
+      <!--#include virtual="/en/projects/_2020_ffemmtena.html"-->
+      <!--#include virtual="/en/projects/_2016_software_library_for_deep_learning.html"-->
+    </main>
+    <!--#include virtual="/_footer.html"-->
+  </body>
+</html>

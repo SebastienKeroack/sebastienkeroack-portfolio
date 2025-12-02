@@ -1,0 +1,30 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+.show-on-print {
+  display: none;
+  visibility: hidden;
+}
+
+@media print {
+  @page {
+    margin: 10mm 0;
+  }
+
+  header {
+    display: none;
+  }
+
+  main {
+    margin-top: unset !important;
+  }
+
+  .avoid-page-break {
+    page-break-inside: avoid;
+  }
+
+  .show-on-print {
+    display: block;
+    visibility: visible;
+  }
+}

@@ -1,0 +1,23 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+a {
+  color: var(--font-color-01);
+  cursor: pointer;
+  text-decoration: none;
+  width: fit-content;
+}
+
+a:hover {
+  transition: 0.3s;
+}
+
+a:hover,
+.hyperlink-selected {
+  color: var(--primary-color);
+}
+
+a:active {
+  transform: scale(1.06);
+  transition: 0.1s;
+}

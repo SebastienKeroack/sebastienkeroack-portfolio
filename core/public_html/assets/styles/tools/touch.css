@@ -1,0 +1,8 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+/* Improve taps responds by ignoring double taps */
+a,
+button {
+  touch-action: manipulation;
+}

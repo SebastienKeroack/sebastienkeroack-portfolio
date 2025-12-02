@@ -1,0 +1,22 @@
+Dimensions:
+- Square format: 1024 x 1024 pixels. All composition and layout decisions must assume a square canvas.
+
+Style:  
+- Futuristic, tech-oriented, clean and minimal, with a slightly academic vibe
+
+Layout Constraint:
+- All key visual elements (icons, diagrams, overlays, text, symbolic objects) must fit within the shape of an uppercase "T", centered inside the square image.  
+  - This means:
+    - A vertical strip ~400px wide down the center
+    - A horizontal band ~300px tall along the top
+  - The "T" layout should guide composition only — no visible borders, frames, or indicators of the T shape.  
+  - Important: all key content must be clearly visible inside the "T" zone, as areas outside may be cropped in thumbnails or previews.
+
+Elements to include (within the "T" zone):
+- Central vertical feature: A stylized abstract document stream flowing downward — digital text elements dissolve into glowing particles and reassemble into neural net diagrams near the base
+- At the bottom center: A robotic agent icon “collecting” or “reading” from a glowing database
+- Above midline toward top band: A translucent web interface frame — depicting the annotation web tool
+
+Background:
+- Dark theme with soft ambient gradients — primarily deep blue with subtle red tones fading in from the edges.
+- Incorporate a subtle chart of the stock market as part of the background — this could include faint candlestick patterns, line graphs, or market indicators, blending naturally into the scene without dominating the visual

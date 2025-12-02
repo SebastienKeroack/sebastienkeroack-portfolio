@@ -1,0 +1,18 @@
+# Ignore local files
+.local/
+
+# Secret variables (shared within the organization, not tracked in git)
+.env
+
+# General build and dependency
+.husky/_/
+.cache/
+dist/
+
+# PHP build and dependency
+composer.lock
+vendor/
+
+# Bun build and dependency
+bun.lock
+node_modules/

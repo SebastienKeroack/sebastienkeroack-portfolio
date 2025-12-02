@@ -1,0 +1,4 @@
+# @see https://github.com/stylelint/stylelint/tree/main/docs/user-guide/configure.md
+extends: stylelint-config-standard
+rules:
+  no-descending-specificity: null

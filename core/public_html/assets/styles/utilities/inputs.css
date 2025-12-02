@@ -1,0 +1,10 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+.input-valid {
+  border-color: green;
+}
+
+.input-invalid {
+  border-color: red;
+}

@@ -1,0 +1,28 @@
+{
+  "editor.detectIndentation": true,
+  "editor.insertSpaces": true,
+  "editor.rulers": [80],
+  "editor.tabSize": 2,
+  "prettier.configPath": "core/bun/.prettierrc.yaml",
+  "prettier.ignorePath": ".gitignore",
+  "prettier.experimentalTernaries": true,
+  "prettier.documentSelectors": ["**/*.{css,js,json,md,php,yaml}"],
+  "[css][javascript][json][markdown][php][yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "files.associations": {
+    ".w3c-ignore": "ignore"
+  },
+  "files.exclude": {
+    "**/*.lock": true,
+    "**/node_modules": true,
+    "**/vendor": true
+  },
+  "search.exclude": {
+    "**/*.env": true,
+    "**/*.lock": true,
+    "**/node_modules": true,
+    "**/vendor": true
+  }
+}

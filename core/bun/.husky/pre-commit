@@ -1,0 +1,1 @@
+bunx lint-staged --config='core/bun/.lintstagedrc.yaml' --no-stash --no-hide-partially-staged

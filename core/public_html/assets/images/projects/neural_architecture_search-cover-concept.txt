@@ -1,0 +1,24 @@
+Dimensions:
+- Square format: 1024 x 1024 pixels. All composition and layout decisions must assume a square canvas.
+
+Style:  
+- Futuristic, tech-oriented, clean and minimal, with a slightly academic vibe
+
+Layout Constraint:
+- All key visual elements (icons, diagrams, overlays, text, symbolic objects) must fit within the shape of an uppercase "T", centered inside the square image.  
+  - This means:
+    - A vertical strip ~400px wide down the center
+    - A horizontal band ~300px tall along the top
+  - The "T" layout should guide composition only — no visible borders, frames, or indicators of the T shape.  
+  - Important: all key content must be clearly visible inside the "T" zone, as areas outside may be cropped in thumbnails or previews.
+
+Elements to include (within the "T" zone):
+- A vertical progression of stylized neural architectures, depicted as layered modular blocks or abstract circuits morphing upward, symbolizing evolving network designs
+- A small humanoid or robotic agent at the base of the vertical strip, “dispatching” or “assembling” these neural modules — representing the reinforcement learning controller
+- Dynamic looped arrows or particle flows going from the top of the vertical structure back to the agent, showing the feedback loop for training refinement
+- Horizontal top band populated with minimalistic cluster icons (racks, GPU arrays), glowing subtly and feeding data down into the central system
+- TensorFlow and Python icons subtly worked into the upper background as part of the circuit overlay or integrated into nodes, semi-transparent and futuristic
+
+Background:
+- A dark theme with subtle blue and red ambient tones fading from the edges
+- Fine grid overlay with faint, ghost-like circuit lines across the canvas

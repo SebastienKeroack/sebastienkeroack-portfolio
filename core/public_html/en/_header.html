@@ -1,0 +1,44 @@
+<header>
+  <a target="_self" href="/">
+    <div class="favicon"></div>
+    <span>Sébastien Kéroack</span>
+  </a>
+  <input id="header-nav-state" type="checkbox">
+  <label for="header-nav-state"></label>
+  <label for="header-nav-state">
+    <span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </span>
+  </label>
+  <nav>
+    <div></div>
+    <a target="_self" id="header-nav-about" href="/en/">ABOUT</a>
+    <div></div>
+    <a target="_self" id="header-nav-experience" href="/en/experience">EXPERIENCE</a>
+    <div></div>
+    <a target="_self" id="header-nav-projects" href="/en/projects">PROJECTS</a>
+    <div></div>
+    <a target="_self" id="header-nav-contact" href="/en/contact">CONTACT</a>
+    <div></div>
+  </nav>
+</header>
+<script>
+  (() => {
+    // Get the canonical link element
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) return;
+
+    // Get the last part of the URL after the last slash
+    // and use it to select the corresponding navigation link
+    const page = canonical.href.split("/").slice(-1)[0];
+    if (!page) return;
+
+    // Add the "hyperlink-selected" class to the corresponding link
+    // to highlight it in the navigation
+    document
+      .getElementById(`header-nav-${page}`)
+      .classList.add("hyperlink-selected");
+  })();
+</script>

@@ -1,0 +1,12 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+.favicon {
+  -webkit-print-color-adjust: exact;
+  background-color: var(--primary-color);
+  height: 16px;
+  min-height: 16px;
+  min-width: 16px;
+  print-color-adjust: exact;
+  width: 16px;
+}

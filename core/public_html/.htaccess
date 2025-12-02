@@ -1,0 +1,14 @@
+DirectoryIndex index.html
+
+Options -Indexes
+RewriteEngine On
+RewriteBase /
+
+# Redirect any request ending with .shtml to the same path without .shtml.
+# [L,R] means this is the last rule if matched and sends a 302 redirect.
+RewriteRule ^(.+)\.shtml$ /$1 [L,R]
+
+# If a file with .shtml extension exists for the requested path,
+# rewrite the URL internally to serve that .shtml file.
+RewriteCond %{REQUEST_FILENAME}.shtml -f
+RewriteRule ^(.*)/?$ /$1.shtml [END]

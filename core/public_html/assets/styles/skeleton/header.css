@@ -1,0 +1,224 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+header {
+  background-color: var(--bg-color-03);
+  box-shadow: 0 0 15px 5px rgb(0 0 0 / 25%);
+  display: flex;
+  flex-direction: row;
+  height: var(--header-topbar-height);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+
+  /* Title (Favicon | Sébastien Kéroack) */
+  > a {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+
+    /* Favicon */
+    > .favicon {
+      margin-left: 20px;
+      transition: all 0.2s ease-in-out;
+    }
+
+    /* Sébastien Kéroack */
+    > span {
+      margin: auto 0 auto 8px;
+      font-size: 1.8em;
+      font-weight: bold;
+      text-wrap: nowrap;
+    }
+  }
+
+  > #header-nav-state {
+    display: none;
+  }
+
+  /* Navigation mask */
+  > label:nth-of-type(1) {
+    background-color: #000;
+    box-shadow: -5px 5px 10px 0 var(--bg-color-03) inset;
+    height: calc(100vh - var(--header-topbar-height));
+    position: absolute;
+    top: var(--header-topbar-height);
+    visibility: hidden;
+  }
+
+  /* Navigation toggle */
+  > label:nth-of-type(2) {
+    display: none;
+    flex-grow: 1;
+    justify-content: flex-end;
+    margin-bottom: 0;
+  }
+
+  /* Navigation menu */
+  > nav {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+}
+
+/* Mobile */
+@media only screen and (width <= 1023.98px) {
+  @keyframes do-spin {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  header {
+    /* Navigation mask */
+    > label:nth-of-type(1) {
+      opacity: 0;
+      right: 0;
+      transition: all 0.2s ease-in-out;
+      width: 100vw;
+    }
+
+    /* Navigation toggle */
+    > label:nth-of-type(2) {
+      align-items: center;
+      display: flex;
+      margin-right: 16px;
+
+      /* Shape */
+      > span {
+        display: flex;
+        flex-direction: column;
+        height: 21px;
+        justify-content: space-between;
+        transform: rotate(0deg);
+        width: 26px;
+
+        > span {
+          background-color: var(--primary-color);
+          border-radius: 1.5px;
+          height: 3px;
+          transition: all 0.2s ease-in-out;
+        }
+
+        > :nth-child(1) {
+          width: 50%;
+        }
+
+        > :nth-child(3) {
+          align-self: flex-end;
+          width: 50%;
+        }
+      }
+    }
+
+    /* Navigation toggle (shape) on hover */
+    > label:nth-of-type(2):hover > span {
+      transform: scale(1.25);
+    }
+
+    /* Navigation menu */
+    > nav {
+      background-color: var(--bg-color-03);
+      flex-direction: column;
+      height: calc(100vh - var(--header-topbar-height));
+      justify-content: flex-start;
+      position: fixed;
+      right: calc(0px - var(--header-sidebar-width));
+      top: var(--header-topbar-height);
+      transform: translateX(0);
+      transition: all 0.2s ease-in-out;
+      width: var(--header-sidebar-width);
+
+      /* Navigation hyperlinks */
+      > a {
+        align-content: center;
+        font-weight: 400;
+        height: 40px;
+        padding-left: 20px;
+        width: 100%;
+      }
+
+      > a:hover {
+        background-color: var(--bg-color-02);
+        box-shadow: 0 0 10px 0 var(--bg-color-02);
+        width: calc(40px + var(--header-sidebar-width));
+      }
+
+      > a:active {
+        background-color: var(--bg-color-01);
+        width: calc(40px + var(--header-sidebar-width));
+      }
+
+      /* Navigation seperators */
+      > div {
+        align-self: center;
+        background-color: var(--bg-color-05);
+        height: 1px;
+        margin: 2px;
+        width: 80%;
+      }
+    }
+  }
+
+  #header-nav-state:checked {
+    /* Navigation mask */
+    ~ label:nth-of-type(1) {
+      opacity: 0.5;
+      right: var(--header-sidebar-width);
+      visibility: visible;
+      width: calc(100vw - var(--header-sidebar-width));
+    }
+
+    /* Navigation toggle (shape) */
+    ~ label:nth-of-type(2) > span {
+      animation: do-spin 5s linear infinite;
+      transform: rotate(-90deg);
+
+      > span {
+        background-color: #f00;
+      }
+
+      > :is(:nth-child(1), :nth-child(3)) {
+        transform: rotate(45deg);
+      }
+
+      > :nth-child(2) {
+        transform: rotate(-45deg);
+      }
+    }
+
+    /* Navigation menu */
+    ~ nav {
+      transform: translateX(calc(0px - var(--header-sidebar-width)));
+    }
+  }
+}
+
+/* Desktop/Laptop */
+@media only screen and (width >= 1023.99px) {
+  /* Navigation hyperlinks */
+  header > nav > a {
+    padding-right: 10px;
+  }
+
+  /* Enlarge the favicon on hover */
+  header:hover > a > .favicon {
+    margin-left: 0;
+    width: 36px;
+  }
+}
+
+@media print {
+  header {
+    display: none;
+  }
+}

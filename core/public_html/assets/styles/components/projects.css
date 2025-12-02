@@ -1,0 +1,183 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+main {
+  justify-content: flex-start;
+
+  /* Page title */
+  > :first-child {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+  }
+}
+
+.project-container {
+  break-after: page;
+  display: flex;
+  flex-direction: column;
+  height: 404px;
+  margin-bottom: 64px;
+  transition: all 0.2s ease-in-out;
+  width: min(95%, 750px);
+
+  > div {
+    background-color: var(--bg-color-03);
+    border-radius: 5px;
+    box-shadow: 0 0 15px 10px var(--bg-color-02);
+    display: flex;
+    flex-direction: row;
+    height: inherit;
+
+    > div:nth-of-type(1) {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      height: inherit;
+
+      /* Icon serving as a hyperlink to the code repository */
+      > :is(a, svg) {
+        height: 48px;
+        margin: 10px 0 0 10px;
+        width: 48px;
+      }
+
+      > div {
+        display: flex;
+        flex-direction: row;
+        margin: 10px 0 20px;
+
+        > div {
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+          margin-right: 10px;
+
+          /* Project name */
+          > h2 {
+            color: var(--primary-color);
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: unset;
+
+            /* Hyperlink to the code repository */
+            > a {
+              color: inherit;
+            }
+          }
+
+          /* Date of creation */
+          > h3 {
+            font-size: 1em;
+            font-style: italic;
+            font-weight: normal;
+            margin: 5px 0 0;
+          }
+        }
+      }
+
+      /* Thick vertical line marker */
+      > div::before {
+        -webkit-print-color-adjust: exact;
+        align-self: stretch;
+        background-color: var(--primary-color);
+        content: ' ';
+        margin: 0 10px 0 0;
+        min-width: 10px;
+        print-color-adjust: exact;
+        width: 10px;
+      }
+
+      /* Description of the project */
+      > ul {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        gap: 20px;
+        list-style-type: none;
+        margin: 0 40px 0 45px;
+        padding: 0;
+      }
+    }
+
+    /* A rough visual representation of the project using an image */
+    > div:nth-of-type(2) {
+      border-radius: 0 5px 5px 0;
+      display: flex;
+      flex-wrap: wrap;
+      min-width: 322px;
+      overflow: hidden;
+      place-content: center center;
+      width: 322px;
+
+      > img {
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+      }
+    }
+  }
+
+  /* A rough list of languages use */
+  > ul {
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 10px;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    top: -32px;
+
+    > li > img {
+      height: 48px;
+    }
+  }
+}
+
+/* Mobile */
+@media only screen and (width <= 1023.98px) {
+  /* Page title */
+  main > :first-child {
+    font-size: smaller;
+  }
+
+  .project-container {
+    height: unset;
+    margin-bottom: unset;
+
+    > div {
+      flex-direction: column;
+
+      /* A rough list of languages use */
+      > div:nth-of-type(1) > ul {
+        margin: 0 25px;
+      }
+
+      /* A rough visual representation of the project using an image */
+      > div:nth-of-type(2) {
+        border-radius: 0 0 5px 5px;
+        margin-top: 20px;
+        max-height: 304px;
+        width: unset;
+
+        > img {
+          height: unset;
+          position: relative;
+        }
+      }
+    }
+  }
+
+  .project-container:hover {
+    transform: scale(1.05);
+  }
+}
+
+/* Desktop/Laptop */
+@media only screen and (width >= 1023.99px) {
+  .project-container:hover {
+    transform: scale(1.1);
+  }
+}

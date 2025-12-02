@@ -1,0 +1,23 @@
+# @see https://prettier.io/docs/configuration
+arrowParens: always
+bracketSameLine: false
+bracketSpacing: true
+embeddedLanguageFormatting: auto
+endOfLine: lf
+experimentalTernaries: true
+experimentalOperatorPosition: end
+htmlWhitespaceSensitivity: css
+objectWrap: preserve
+proseWrap: preserve
+printWidth: 80
+quoteProps: as-needed
+semi: true
+singleAttributePerLine: false
+singleQuote: true
+tabWidth: 2
+trailingComma: all
+useTabs: false
+# PHP specific settings
+plugins: ['@prettier/plugin-php']
+phpVersion: '8.2'
+braceStyle: '1tbs'

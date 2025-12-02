@@ -1,0 +1,16 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+body {
+  background-color: var(--bg-color-03);
+}
+
+main {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: var(--header-topbar-height);
+  min-height: calc(100vh - var(--header-topbar-height));
+  width: 100%;
+}

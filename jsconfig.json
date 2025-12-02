@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "/assets/scripts/*": ["core/public_html/assets/scripts/*"] },
+    "types": ["bun-types"],
+    "module": "esnext",
+    "target": "esnext",
+    "checkJs": false
+  },
+  "exclude": ["node_modules", "dist", "core/php/vendor"]
+}

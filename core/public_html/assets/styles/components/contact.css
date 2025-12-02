@@ -1,0 +1,137 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+@import url('../utilities/inputs.css');
+
+main {
+  justify-content: flex-start;
+
+  /* Page title */
+  > :first-child {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+  }
+
+  > form {
+    align-items: stretch;
+    background-color: var(--bg-color-03);
+    border-radius: 5px;
+    box-shadow: 0 0 15px 10px var(--bg-color-02);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 64px;
+    padding: 2%;
+    width: min(100%, 750px);
+
+    > label {
+      display: flex;
+      flex-direction: column;
+
+      > span {
+        color: var(--font-color-02);
+        padding: 5px 0 0 5px;
+        position: absolute;
+        transition: all 0.3s ease-out;
+      }
+
+      > textarea {
+        min-height: 200px;
+        resize: vertical;
+      }
+
+      > :is(input, textarea) {
+        padding: calc(1em - 5px) 5px 5px;
+      }
+
+      > :is(input, textarea)::placeholder {
+        color: var(--font-color-02);
+      }
+
+      > :is(input, textarea):placeholder-shown {
+        padding: 0.5em 5px;
+
+        ~ span {
+          opacity: 0;
+          transform: translateY(0.5em);
+        }
+      }
+    }
+
+    :is(button, input, textarea) {
+      -webkit-print-color-adjust: exact;
+      background-color: var(--bg-color-04);
+      border: 2px solid var(--bg-color-03);
+      border-radius: 10px;
+      color: var(--font-color-01);
+      font-size: x-large;
+      print-color-adjust: exact;
+    }
+
+    :is(button, input, textarea):is(:hover, :focus) {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    > .h-separator {
+      margin-bottom: 0;
+    }
+
+    > fieldset {
+      align-items: center;
+      border-width: 0;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+
+      > button {
+        border-color: var(--primary-color);
+        height: 60px;
+        padding: 0.3em;
+      }
+
+      > button:disabled {
+        border-color: var(--font-color-02);
+        color: var(--font-color-02);
+      }
+    }
+
+    > iframe {
+      border-width: 0;
+      display: none;
+    }
+  }
+}
+
+/* Mobile */
+@media only screen and (width <= 1023.98px) {
+  main {
+    /* Page title */
+    > :first-child {
+      font-size: smaller;
+    }
+
+    > form > fieldset {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+}
+
+@media print {
+  /* Convert the form to be usable on print */
+  main > form > label {
+    /* Hide placeholder by setting the same color as the background */
+    > :is(input, textarea)::placeholder {
+      color: var(--bg-color-04);
+    }
+
+    /* Revert opacity and transform on print */
+    > span {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+  }
+}

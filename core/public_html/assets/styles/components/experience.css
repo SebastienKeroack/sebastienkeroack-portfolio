@@ -1,0 +1,126 @@
+/* Copyright 2025 Sébastien Kéroack. All Rights Reserved.
+============================================================================= */
+
+main {
+  justify-content: flex-start;
+
+  /* Page title */
+  > :first-child {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+  }
+}
+
+.experience-container {
+  background-color: var(--bg-color-03);
+  border-radius: 5px;
+  box-shadow: 0 0 15px 10px var(--bg-color-02);
+  break-after: page;
+  margin-bottom: 64px;
+  min-height: 313px;
+  transition: all 0.2s ease-in-out;
+  width: min(95%, 750px);
+
+  > div {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    margin-top: 10px;
+
+    > div {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      margin-right: 10px;
+
+      > div {
+        align-items: center;
+        display: flex;
+        flex-direction: row;
+
+        > :nth-child(1) {
+          flex-grow: 1;
+        }
+
+        /* Job title */
+        > h2 {
+          color: var(--primary-color);
+          font-size: 1.3em;
+          font-weight: bold;
+          margin: unset;
+
+          /* Hyperlink to the company */
+          > a {
+            color: inherit;
+          }
+        }
+
+        /* Company name */
+        > h3 {
+          font-size: 1.1em;
+          font-weight: normal;
+          margin: unset;
+        }
+
+        /* Date of employment, Location */
+        h4,
+        h5 {
+          align-self: baseline;
+          font-style: italic;
+          font-size: 1em;
+          font-weight: normal;
+          line-height: 1.5em;
+          margin: unset;
+          text-align: right;
+        }
+      }
+
+      > div:nth-of-type(2) {
+        margin-top: 10px;
+      }
+    }
+  }
+
+  /* Thick vertical line marker */
+  > :first-child::before {
+    -webkit-print-color-adjust: exact;
+    align-self: stretch;
+    background-color: var(--primary-color);
+    content: ' ';
+    margin: 0 10px 0 0;
+    min-width: 10px;
+    print-color-adjust: exact;
+    width: 10px;
+  }
+
+  /* Description of the job */
+  > ul {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    margin-right: 1.4em;
+    margin-top: 1.6em;
+    padding-left: 2em;
+  }
+}
+
+/* Mobile */
+@media only screen and (width <= 1023.98px) {
+  /* Page title */
+  main > :first-child {
+    font-size: smaller;
+  }
+
+  .experience-container:hover {
+    transform: scale(1.05);
+  }
+}
+
+/* Desktop/Laptop */
+@media only screen and (width >= 1023.99px) {
+  .experience-container:hover {
+    transform: scale(1.1);
+  }
+}
