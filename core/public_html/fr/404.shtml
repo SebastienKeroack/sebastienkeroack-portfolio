@@ -26,9 +26,9 @@
     <meta property="og:description" content="Désolé, la page que vous recherchez est introuvable! Il est possible que cette page ait été déplacée ou n'ait jamais existé (erreur 404). Essayez de vérifier si l'URL contient des erreurs, puis cliquez sur le bouton d'actualisation de votre navigateur.">
     <meta property="og:image" content="https://s.whc.ca/broken-page.svg">
     <meta property="og:see_also" content="https://www.github.com/SebastienKeroack">
-    <meta property="og:see_also" content="https://www.stackoverflow.com/users/6642890/s%C3%A9bastien-k%C3%A9roack">
+    <meta property="og:see_also" content="https://stackoverflow.com/users/6642890">
     <meta property="og:see_also" content="https://www.freelancer.com/u/sebastienkeroack">
-    <meta property="og:see_also" content="https://www.linkedin.com/in/s%C3%A9bastien-k%C3%A9roack/">
+    <meta property="og:see_also" content="https://www.linkedin.com/in/sébastien-kéroack/">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
