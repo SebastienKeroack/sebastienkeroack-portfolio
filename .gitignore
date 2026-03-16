@@ -1,16 +1,29 @@
-# Ignore local files
-.local/
+# ==============================================================================
+# Ignore local development and environment files
+# ==============================================================================
 
-# Secret variables (shared within the organization, not tracked in git)
+# Local configuration and environment files (not tracked in git)
+.local/
 .env
+
+# ==============================================================================
+# Editor and IDE files
+# ==============================================================================
+
+# Visual Studio Code workspace settings and folders
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings_recommended.json
+
+# ==============================================================================
+# Build system and artifacts
+# ==============================================================================
 
 # General build and dependency
 .husky/_/
-.cache/
-dist/
+build/
 
 # PHP build and dependency
-composer.lock
 vendor/
 
 # Bun build and dependency

@@ -1,31 +1,23 @@
 /**
  * Provides unit tests for version management utilities and the Version class.
- * Ensures correct parsing, updating, and formatting of version information,
- * as well as validation of commit hash retrieval and JSON version updates.
+ * Ensures correct parsing, updating, and formatting of version information
+ * from version.txt and package.json.
  *
  * @author
- * Sébastien Kéroack <dev@sebastienkeroack.com>
+ * Sébastien Kéroack <code@sebastienkeroack.com>
  * @copyright
  * 2025 Sébastien Kéroack. All rights reserved.
  * @license
- * https://github.com/SebastienKeroack/skportfolio/blob/main/LICENSE
+ * https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/LICENSE
  * Apache License
  */
 
 import { describe, expect, test } from 'bun:test';
 import {
-  execGetLastCommitID,
   replaceFieldVersionJson,
+  replaceVersionText,
   Version,
 } from '../src/internal/version.mjs';
-
-describe('execGetLastCommitID', async () => {
-  test('Returns a short hash string', async () => {
-    const ans = await execGetLastCommitID();
-    expect(typeof ans).toBe('string');
-    expect(ans).toMatch(/^[a-f\d]{7,}$/i);
-  });
-});
 
 describe('replaceFieldVersionJson', () => {
   test('Updates version field in package.json', () => {
@@ -42,130 +34,65 @@ describe('replaceFieldVersionJson', () => {
   });
 });
 
-describe('Version::getFields', () => {
-  test('Extracts all fields from valid YAML', () => {
-    const ans = Version.getFields(`
-      major: 1
-      minor: 2
-      patch: 3
-      revision: 456
-      commitID: abcdef1
-    `);
-    expect(typeof ans).toBe('object');
-    expect(ans).toEqual({
-      major: 1,
-      minor: 2,
-      patch: 3,
-      revision: 456,
-      commitID: 'abcdef1',
-    });
+describe('replaceVersionText', () => {
+  test('Replaces the first non-comment line and preserves the rest', () => {
+    const ans = replaceVersionText(
+      `0.3.0-6+2eb9e8f\n\n## Also at:\n## - package.toml\n`,
+      '0.4.0',
+    );
+
+    expect(typeof ans).toBe('string');
+    expect(ans).toBe(`0.4.0\n\n## Also at:\n## - package.toml\n`);
   });
 
-  test.each(['major', 'minor', 'patch', 'revision', 'commitID'])(
-    'Throws if %s field is missing',
-    (field) => {
-      const yaml = `
-        major: 1
-        minor: 2
-        patch: 3
-        revision: 456
-        commitID: abcdef1
-      `.replace(new RegExp(`${field}: [a-f\\d]+`), '');
-      expect(yaml).not.toContain(field);
-      expect(() => Version.getFields(yaml)).toThrow(
-        `Missing required field: ${field}`,
-      );
-    },
-  );
+  test('Creates a normalized file when no version line exists', () => {
+    const ans = replaceVersionText('## version managed elsewhere\n', '1.2.3');
 
-  test('Ignores extra whitespace and order', () => {
-    const ans = Version.getFields(`
-      minor:   2
-      patch:  3
-      revision:  456
-      major:  1
-      commitID: abcdef1
-    `);
-    expect(typeof ans).toBe('object');
-    expect(ans).toEqual({
-      major: 1,
-      minor: 2,
-      patch: 3,
-      revision: 456,
-      commitID: 'abcdef1',
-    });
-  });
-
-  test('Parses fields with extra text between them', () => {
-    const ans = Version.getFields(`
-      major: 1
-      # comment
-      minor: 2
-
-      patch: 3
-      # another comment
-      revision: 456
-      commitID: abcdef1
-    `);
-    expect(typeof ans).toBe('object');
-    expect(ans).toEqual({
-      major: 1,
-      minor: 2,
-      patch: 3,
-      revision: 456,
-      commitID: 'abcdef1',
-    });
+    expect(typeof ans).toBe('string');
+    expect(ans).toBe('1.2.3\n');
   });
 });
 
-describe('Version.computeNextRevisionNumber', () => {
-  test('Resets revision to 0 if commitID changes', () => {
-    const nextRevision = new Version({
-      major: 0,
-      minor: 0,
-      patch: 0,
-      revision: 1,
-      commitID: 'abcdef1',
-    }).computeNextRevisionNumber('abcdef2');
-    expect(typeof nextRevision).toBe('number');
-    expect(nextRevision).toBe(0);
+describe('Version.extract', () => {
+  test('Extracts the first non-comment version line', () => {
+    const ans = Version.extract(`
+      # Generated from release tooling
+
+      1.2.3
+
+      ## Also at:
+      ## - package.json
+    `);
+
+    expect(typeof ans).toBe('string');
+    expect(ans).toBe('1.2.3');
   });
 
-  test('Increments revision if commit ID does not change', () => {
-    const nextRevision = new Version({
-      major: 0,
-      minor: 0,
-      patch: 0,
-      revision: 1,
-      commitID: 'abcdef1',
-    }).computeNextRevisionNumber('abcdef1');
-    expect(typeof nextRevision).toBe('number');
-    expect(nextRevision).toBe(2);
+  test('Normalizes surrounding whitespace', () => {
+    const ans = Version.extract('   2.3.4-beta.1+build.9   \n');
+
+    expect(typeof ans).toBe('string');
+    expect(ans).toBe('2.3.4-beta.1+build.9');
+  });
+
+  test('Throws when the file does not contain a version', () => {
+    expect(() => Version.extract('# only comments\n\n')).toThrow(
+      'Missing version string',
+    );
+  });
+
+  test('Throws when the version is invalid', () => {
+    expect(() => Version.extract('version: 1.2.3\n')).toThrow(
+      'Invalid version string: version: 1.2.3',
+    );
   });
 });
 
 describe('Version.toString', () => {
-  test('Returns version string with commit ID when present', () => {
-    const ans = new Version({
-      major: 1,
-      minor: 2,
-      patch: 3,
-      revision: 456,
-      commitID: 'abcdef1',
-    }).toString();
-    expect(typeof ans).toBe('string');
-    expect(ans).toBe('1.2.3-456+abcdef1');
-  });
+  test('Returns the normalized version string', () => {
+    const ans = new Version('1.2.3-beta.1+build.5').toString();
 
-  test('Returns version string without commit ID when empty', () => {
-    const ans = new Version({
-      major: 1,
-      minor: 2,
-      patch: 3,
-      revision: 456,
-      commitID: '',
-    }).toString();
     expect(typeof ans).toBe('string');
-    expect(ans).toBe('1.2.3-456');
+    expect(ans).toBe('1.2.3-beta.1+build.5');
   });
 });

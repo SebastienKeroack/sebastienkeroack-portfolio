@@ -4,11 +4,11 @@
  * if the '--force' flag is provided. It outputs build status and timing.
  *
  * @author
- * Sébastien Kéroack <dev@sebastienkeroack.com>
+ * Sébastien Kéroack <code@sebastienkeroack.com>
  * @copyright
  * 2025 Sébastien Kéroack. All rights reserved.
  * @license
- * https://github.com/SebastienKeroack/skportfolio/blob/main/LICENSE
+ * https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/LICENSE
  * Apache License
  */
 

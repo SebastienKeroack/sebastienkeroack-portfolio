@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-frontend
+  namespace: sebastienkeroack-dot-com
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portfolio-frontend
+  template:
+    metadata:
+      labels:
+        app: portfolio-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: sebastienkeroack-portfolio-frontend:$PROJECT_VERSION
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: portfolio-frontend-nginx-config
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-frontend
+  namespace: sebastienkeroack-dot-com
+spec:
+  selector:
+    app: portfolio-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

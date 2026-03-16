@@ -8,10 +8,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && IN_PRODUCTION) {
   exit();
 }
 
-use SKPortfolio\App;
 use SKPortfolio\Forms\Contact;
 
-$app = new App('fr');
 $form = new Contact();
 $form->submit();
 

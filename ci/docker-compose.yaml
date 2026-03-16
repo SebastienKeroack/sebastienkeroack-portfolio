@@ -1,0 +1,25 @@
+services:
+  backend:
+    image: sebastienkeroack-portfolio-backend:$PROJECT_VERSION
+    environment:
+      RECAPTCHA_SECRET_KEY: '$RECAPTCHA_SECRET_KEY'
+      SMTP_HOST: '$SMTP_HOST'
+      SMTP_NAME: '$SMTP_NAME'
+      SMTP_USERNAME: '$SMTP_USERNAME'
+      SMTP_PASSWORD: '$SMTP_PASSWORD'
+      SMTP_CONTACT_RECIPIENT: '$SMTP_CONTACT_RECIPIENT'
+    read_only: true
+    restart: unless-stopped
+    tmpfs:
+      - /tmp
+
+  frontend:
+    depends_on:
+      - backend
+    image: sebastienkeroack-portfolio-frontend:$PROJECT_VERSION
+    ports:
+      - '8080:8080'
+    read_only: true
+    restart: unless-stopped
+    tmpfs:
+      - /tmp

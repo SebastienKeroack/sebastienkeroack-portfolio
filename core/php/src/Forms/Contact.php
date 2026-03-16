@@ -5,11 +5,11 @@
  * and email sending.
  *
  * @author
- * Sébastien Kéroack <dev@sebastienkeroack.com>
+ * Sébastien Kéroack <code@sebastienkeroack.com>
  * @copyright
  * 2025 Sébastien Kéroack. All rights reserved.
  * @license
- * https://github.com/SebastienKeroack/skportfolio/blob/main/LICENSE
+ * https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/LICENSE
  * Apache License
  */
 
@@ -110,16 +110,19 @@ final class Contact extends ReCAPTCHAV2 {
    */
   private function getMailer(): PHPMailer {
     $mail = new PHPMailer(true);
-    $mail->setLanguage(LANG, PHPMAILER_DIR . DIRECTORY_SEPARATOR . 'language');
-    $mail->setFrom('donotreply@sebastienkeroack.com', 'Sébastien Kéroack');
+    $mail->setLanguage(
+      Lang::get('lang_code'),
+      'vendor/phpmailer/phpmailer/language',
+    );
+    $mail->setFrom($_ENV['SMTP_USERNAME'], $_ENV['SMTP_NAME']);
     $mail->isSMTP();
     //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
     $mail->SMTPAuth = true;
     $mail->SMTPSecure = 'ssl';
-    $mail->Username = 'donotreply@sebastienkeroack.com';
+    $mail->Username = $_ENV['SMTP_USERNAME'];
     $mail->Password = $_ENV['SMTP_PASSWORD'];
     $mail->CharSet = PHPMailer::CHARSET_UTF8;
-    $mail->Host = 'mail.sebastienkeroack.com';
+    $mail->Host = $_ENV['SMTP_HOST'];
     $mail->Port = 465;
     $mail->isHTML(false);
     return $mail;
@@ -132,7 +135,7 @@ final class Contact extends ReCAPTCHAV2 {
    * @throws PHPMailerException if there is an error sending the email.
    */
   private function sendFormToWebmaster(PHPMailer $mail): void {
-    $mail->addAddress('contact@sebastienkeroack.com');
+    $mail->addAddress($_ENV['SMTP_CONTACT_RECIPIENT']);
     $mail->addReplyTo($this->email, $this->name);
     $mail->Subject = "Contact form: $this->subject";
     $mail->Body = <<<EOT

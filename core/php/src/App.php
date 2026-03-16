@@ -2,24 +2,11 @@
 
 namespace SKPortfolio;
 
-use Dotenv\Dotenv;
-
 final class App {
   public readonly string $langCode;
 
   public function __construct(string $langCode = '') {
     $this->langCode = strtolower($langCode ?: $_ENV['LANG'] ?? 'en');
-  }
-
-  public function loadEnvironmentVariables($envDir = ''): bool {
-    $envDir = $envDir ?: dirname(__DIR__);
-    if (!is_dir($envDir)) {
-      return false;
-    }
-
-    $dotenv = Dotenv::createMutable($envDir);
-    $dotenv->load();
-    return true;
   }
 
   /**

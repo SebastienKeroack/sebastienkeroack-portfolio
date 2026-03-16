@@ -5,11 +5,11 @@
  * throughout the build and development process.
  *
  * @author
- * Sébastien Kéroack <dev@sebastienkeroack.com>
+ * Sébastien Kéroack <code@sebastienkeroack.com>
  * @copyright
  * 2025 Sébastien Kéroack. All rights reserved.
  * @license
- * https://github.com/SebastienKeroack/skportfolio/blob/main/LICENSE
+ * https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/LICENSE
  * Apache License
  */
 
@@ -51,8 +51,8 @@ export class PathManager {
     const relRoot = resolve(relative(process.cwd(), absPath));
     this.#root = relRoot;
     this.#srcDir = join(relRoot, 'core', 'public_html');
-    this.#outDir = join(relRoot, 'dist');
-    this.#versionPath = join(relRoot, 'version.yaml');
+    this.#outDir = join(relRoot, 'build');
+    this.#versionPath = join(relRoot, 'version.txt');
     this.#packagePath = join(relRoot, 'package.json');
   }
 
@@ -84,9 +84,9 @@ export class PathManager {
   }
 
   /**
-   * Gets the path to the version.yaml file.
+   * Gets the path to the version.txt file.
    *
-   * @returns {string} Path to version.yaml.
+   * @returns {string} Path to version.txt.
    */
   get versionPath() {
     return this.#versionPath;

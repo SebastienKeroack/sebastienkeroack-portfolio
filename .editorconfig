@@ -18,5 +18,5 @@ trim_trailing_whitespace = false
 max_line_length = 80
 
 [*.{js,mjs}]
-quote_type = single
+quote_type = double
 semi = true

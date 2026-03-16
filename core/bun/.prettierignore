@@ -1,13 +1,28 @@
-# Personal directories
-.user/
+# ==============================================================================
+# Ignore local development and environment files
+# ==============================================================================
 
-# Secret variables (shared within the organization, not tracked in git)
+# Local configuration and environment files (not tracked in git)
+.local/
 .env
+.env.example
+
+# ==============================================================================
+# Editor and IDE files
+# ==============================================================================
+
+# Visual Studio Code workspace settings and folders
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings_recommended.json
+
+# ==============================================================================
+# Build system and artifacts
+# ==============================================================================
 
 # General build and dependency
 .husky/_/
-.cache/
-dist/
+build/
 
 # PHP build and dependency
 composer.lock
@@ -16,6 +31,17 @@ vendor/
 # Bun build and dependency
 bun.lock
 node_modules/
+
+# ==============================================================================
+# Translation files
+# ==============================================================================
+
+# Ignore translation files
+**/language/*.php
+
+# ==============================================================================
+# HTML/SHTML files
+# ==============================================================================
 
 # HTML/SHTML files
 *.html

@@ -1,19 +1,18 @@
 {
-  "name": "sebastienkeroack/skportfolio",
+  "name": "sebastienkeroack/sebastienkeroack-portfolio",
   "type": "project",
   "description": "This project is a custom-built website designed to host and showcase a multilingual personal portfolio.",
   "authors": [
     {
       "name": "Sébastien Kéroack",
-      "email": "dev@sebastienkeroack.com",
-      "homepage": "https://www.sebastienkeroack.com",
+      "email": "code@sebastienkeroack.com",
+      "homepage": "https://sebastienkeroack.com",
       "role": "Developer"
     }
   ],
   "require": {
     "php": ">=8.2.12",
     "phpmailer/phpmailer": ">=6.9.2",
-    "vlucas/phpdotenv": ">=5.6",
     "monolog/monolog": ">=3.9"
   },
   "require-dev": {
@@ -33,7 +32,7 @@
     }
   },
   "scripts": {
-    "test": "@php vendor/bin/pest --colors=always",
+    "test": "@php vendor/bin/pest --colors=always --test-directory=test",
     "lint": "@php vendor/bin/phpcs",
     "fix": "@php vendor/bin/phpcbf"
   },
@@ -52,8 +51,8 @@
     "ssi"
   ],
   "support": {
-    "issues": "https://github.com/SebastienKeroack/skportfolio/issues",
-    "source": "https://github.com/SebastienKeroack/skportfolio"
+    "issues": "https://github.com/SebastienKeroack/sebastienkeroack-portfolio/issues",
+    "source": "https://github.com/SebastienKeroack/sebastienkeroack-portfolio"
   },
   "license": "Apache-2.0"
 }

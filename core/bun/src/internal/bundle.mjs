@@ -5,11 +5,11 @@
  * ensure the output directory contains only the latest build artifacts.
  *
  * @author
- * Sébastien Kéroack <dev@sebastienkeroack.com>
+ * Sébastien Kéroack <code@sebastienkeroack.com>
  * @copyright
  * 2025 Sébastien Kéroack. All rights reserved.
  * @license
- * https://github.com/SebastienKeroack/skportfolio/blob/main/LICENSE
+ * https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/LICENSE
  * Apache License
  */
 
@@ -177,8 +177,8 @@ class Asset {
     // Skip HTML and PHP files - they're handled by PageBuilder
     if (/\.(s?html|php)$/.test(src)) return;
 
-    let content = '';
-    let outname = '';
+    let content;
+    let outname;
 
     // Process JavaScript and CSS files with bundling and minification
     if (/\.(m?js|css)$/.test(src)) {
@@ -582,7 +582,7 @@ export async function bundle(srcDir, outDir, force = false) {
   if (!(await exists(dstDir))) await mkdir(dstDir);
 
   // Load previous build state for incremental builds
-  const manifestPath = join(outDir, '.cache', `${basenameDir}.manifest.json`);
+  const manifestPath = join(outDir, 'bun', `${basenameDir}.manifest.json`);
   const manifest = await loadManifest(force ? '' : manifestPath);
 
   /**

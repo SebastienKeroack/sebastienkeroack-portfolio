@@ -21,7 +21,7 @@ final class Log {
     $streamHandler = new StreamHandler('php://stdout', Level::Debug);
     $streamHandler->setFormatter($formatter);
 
-    $logger = new Logger('skportfolio');
+    $logger = new Logger('sebastienkeroack-portfolio');
     $logger->pushHandler($streamHandler);
     self::$logger = $logger;
   }

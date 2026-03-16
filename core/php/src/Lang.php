@@ -119,6 +119,7 @@ final class Lang {
     // phpcs:disable Generic.Files.LineLength.TooLong
     // Define full set of translatable strings in English
     self::$data = [
+      'lang_code' => 'en',
       'invalid_captcha' => 'Please fill out the captcha form correctly.',
       'invalid_email' => 'Please enter a valid email.',
       'invalid_message' => 'Please enter a valid message.',

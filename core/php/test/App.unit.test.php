@@ -54,36 +54,3 @@ describe('App::__construct', function () {
     },
   );
 });
-
-describe('App::loadEnvironmentVariables', function () {
-  beforeEach(function () {
-    $this->_ENV = $_ENV;
-  });
-
-  afterEach(function () {
-    $_ENV = $this->_ENV;
-  });
-
-  it('should load environment variables with default directory', function () {
-    $app = new App();
-    expect($app->loadEnvironmentVariables())->toBeTrue();
-  });
-
-  it('should load and expose expected environment variables ', function () {
-    $app = new App();
-    expect($_ENV)->not->toHaveKey('RECAPTCHA_SECRET_KEY');
-    expect($_ENV)->not->toHaveKey('SMTP_PASSWORD');
-    expect($_ENV)->not->toHaveKey('PHPMAILER_LANG_DIR');
-    expect($app->loadEnvironmentVariables())->toBeTrue();
-    expect($_ENV)->toHaveKey('RECAPTCHA_SECRET_KEY');
-    expect($_ENV)->toHaveKey('SMTP_PASSWORD');
-    expect($_ENV)->toHaveKey('PHPMAILER_LANG_DIR');
-  });
-
-  it('should return false for non-existent .env file', function () {
-    $app = new App();
-    expect(
-      $app->loadEnvironmentVariables('/non/existent/directory'),
-    )->toBeFalse();
-  });
-});

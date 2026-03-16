@@ -7,8 +7,8 @@
     <title>Experience | Sébastien Kéroack</title>
 
     <!-- Canonical & Home Links -->
-    <link rel="home" href="https://www.sebastienkeroack.com/en/">
-    <link rel="canonical" href="https://www.sebastienkeroack.com/en/experience">
+    <link rel="home" href="https://sebastienkeroack.com/en/">
+    <link rel="canonical" href="https://sebastienkeroack.com/en/experience">
 
     <!-- Primary Meta Tags -->
     <meta name="author" content="Sébastien Kéroack">
@@ -18,7 +18,7 @@
     <meta name="robots" content="index, follow">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:url" content="https://www.sebastienkeroack.com/en/experience">
+    <meta property="og:url" content="https://sebastienkeroack.com/en/experience">
     <meta property="og:locale" content="en">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Experience">

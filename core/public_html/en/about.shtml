@@ -7,8 +7,8 @@
     <title>Sébastien Kéroack</title>
 
     <!-- Canonical & Home Links -->
-    <link rel="home" href="https://www.sebastienkeroack.com/en/">
-    <link rel="canonical" href="https://www.sebastienkeroack.com/en/about">
+    <link rel="home" href="https://sebastienkeroack.com/en/">
+    <link rel="canonical" href="https://sebastienkeroack.com/en/about">
 
     <!-- Primary Meta Tags -->
     <meta name="author" content="Sébastien Kéroack">
@@ -18,7 +18,7 @@
     <meta name="robots" content="index, follow">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:url" content="https://www.sebastienkeroack.com/en/about">
+    <meta property="og:url" content="https://sebastienkeroack.com/en/about">
     <meta property="og:locale" content="en">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Sébastien Kéroack">
@@ -88,7 +88,7 @@
             </a>
           </nav>
         </div>
-        <img alt="QR code" class="show-on-print" src="/assets/images/qr-codes/sebastienkeroack.com-238x238.jpeg">
+        <img alt="QR code" class="show-on-print" src="/assets/images/qr-codes/sebastienkeroack-dot-com-238x238.jpeg">
       </div>
       <div id="author-bio">
         <h3 class="try-fade-in">Hello</h3>

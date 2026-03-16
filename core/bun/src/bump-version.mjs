@@ -1,19 +1,18 @@
 /**
- * Increments the project version number and updates version files accordingly.
- * Loads the current version, bumps it and writes changes.
+ * Syncs the project version from version.txt into other version consumers.
+ * Loads the current version and writes normalized values back out.
  *
  * @author
- * Sébastien Kéroack <dev@sebastienkeroack.com>
+ * Sébastien Kéroack <code@sebastienkeroack.com>
  * @copyright
  * 2025 Sébastien Kéroack. All rights reserved.
  * @license
- * https://github.com/SebastienKeroack/skportfolio/blob/main/LICENSE
+ * https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/LICENSE
  * Apache License
  */
 
 import { Version } from './internal/version.mjs';
 
 const version = await Version.load(globalThis.path.versionPath);
-await version.bump();
 await version.write(globalThis.path.versionPath, globalThis.path.packagePath);
-console.log('Version bumped to', version.toString());
+console.log('Version synced to', version.toString());

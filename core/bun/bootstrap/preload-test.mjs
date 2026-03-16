@@ -4,11 +4,11 @@
  * isolated and consistent test execution.
  *
  * @author
- * Sébastien Kéroack <dev@sebastienkeroack.com>
+ * Sébastien Kéroack <code@sebastienkeroack.com>
  * @copyright
  * 2025 Sébastien Kéroack. All rights reserved.
  * @license
- * https://github.com/SebastienKeroack/skportfolio/blob/main/LICENSE
+ * https://github.com/SebastienKeroack/sebastienkeroack-portfolio/blob/main/LICENSE
  * Apache License
  */
 
@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { PathManager } from './path-manager.mjs';
 
 globalThis.pathTemp = new PathManager(
-  join(globalThis.root, '.cache', 'bun', 'test'),
+  join(globalThis.root, 'build', 'bun', 'test'),
 );
 
 beforeAll(() => {
