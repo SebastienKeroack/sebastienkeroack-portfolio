@@ -1,5 +1,5 @@
 0.4.0
 
 ## Also at:
-## - package.toml
+## - package.json
 ## - git describe --tags --abbrev=0 --match "v[0-9]*.*"
