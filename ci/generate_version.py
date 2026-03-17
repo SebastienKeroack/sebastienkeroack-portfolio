@@ -82,22 +82,11 @@ if __name__ == "__main__":
     else:
         version = tagged_version
 
-    # Write version.py
-    with open(project_root / "job_search_pipeline" / "version.py", "w") as f:
-        f.write('__all__ = ["__version__", "git_version"]\n')
-        f.write(f'__version__ = "{version}"\n')
-        f.write(f'git_version = "{sha}"\n')
-
     # Untag versions
     untagged_version = version.split("+")[0]
 
     # Update version.txt
     replace_line(project_root / "version.txt", untagged_version, at=0)
-
-    # Update pyproject.toml
-    replace_line(
-        project_root / "pyproject.toml", f'version = "{untagged_version}"', at=2
-    )
 
     # Update package.json
     replace_line(
