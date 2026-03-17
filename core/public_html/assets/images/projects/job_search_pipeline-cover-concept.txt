@@ -1,0 +1,26 @@
+Dimensions:
+- Square format: 1024 x 1024 pixels. All composition decisions should assume a square canvas.
+
+Style:
+- Futuristic, tech-oriented, clean and minimal, with a slightly academic vibe
+- Professional and structured, with emphasis on clarity over visual density
+
+Layout Constraint:
+- All key visual elements must fit within the shape of an uppercase "T", centered inside the image.
+  - This implies:
+    - A vertical strip about 400 px wide in the center
+    - A horizontal band about 300 px tall across the top
+  - The "T" should be used only as a composition guide. No visible frame or outline.
+  - All essential content must remain clearly visible inside this zone, since the image may be cropped in some thumbnails.
+
+Elements to include (inside the "T" zone):
+- A simplified pipeline composition showing job opportunities entering at the top and a refined application output at the bottom
+- A small set of connected cards or panels in the top band to suggest role discovery and data collection
+- A central vertical flow of modular blocks, nodes, or linked stages representing parsing, matching, and automation
+- A subtle orchestration layer evoking n8n through a few connected nodes or automation blocks
+- A polished final output element near the lower center, suggesting a tailored application package or scored match
+- The overall image should communicate structure, operational efficiency, and repeatable workflow, without leaning too heavily into abstract AI symbolism
+
+Background:
+- A dark theme with subtle blue and red ambient tones fading from the edges
+- Fine grid overlay with faint, ghost-like circuit lines across the canvas

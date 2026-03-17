@@ -52,6 +52,7 @@
         <div class="favicon"></div>
         <h1>Personal projects</h1>
       </div>
+      <!--#include virtual="/en/projects/_2026_job_search_pipeline.html"-->
       <!--#include virtual="/en/projects/_2023_my_portfolio.html"-->
       <!--#include virtual="/en/projects/_2021_neural_architecture_search.html"-->
       <!--#include virtual="/en/projects/_2020_ffemmtena.html"-->
