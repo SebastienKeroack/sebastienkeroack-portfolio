@@ -44,14 +44,15 @@
     "lint:phpcs": "php core/php/vendor/bin/phpcs --standard=core/php/phpcs.xml",
     "lint:stylelint": "stylelint --config core/bun/.stylelintrc.yaml --ignore-path .gitignore core/public_html/**/*.css",
     "lint:html-validator": "html-validator --ignore-config=core/bun/.w3c-ignore --continue core/public_html",
-    "lint:all": "run-p --continue-on-error lint:eslint lint:prettier lint:phpcs lint:stylelint lint:html-validator",
+    "lint:all": "bun run --parallel --no-exit-on-error lint:eslint lint:prettier lint:phpcs lint:stylelint",
     "fix:eslint": "bun run lint:eslint --fix",
     "fix:prettier": "bun run lint:prettier --write",
     "fix:phpcs": "php core/php/vendor/bin/phpcbf --standard=core/php/phpcs.xml",
     "fix:stylelint": "bun run lint:stylelint --fix",
     "fix:all": "run-s --continue-on-error fix:eslint fix:prettier fix:phpcs fix:stylelint",
+    "test:bun": "bun test",
     "test:php": "php core/php/vendor/bin/pest --configuration=core/php/phpunit.xml --colors=always --test-directory=test",
-    "test:all": "bun test; bun run test:php",
+    "test:all": "bun run --sequential --no-exit-on-error test:bun test:php",
     "prepare": "husky"
   },
   "license": "Apache-2.0"

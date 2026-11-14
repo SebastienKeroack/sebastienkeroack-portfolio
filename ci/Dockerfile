@@ -46,6 +46,7 @@ RUN apk add --no-cache \
   && ln -sf "/usr/bin/php${PHP_VER}" /usr/local/bin/php
 
 COPY bunfig.toml bunfig.toml
+COPY bun.lock bun.lock
 COPY jsconfig.json jsconfig.json
 COPY package.json package.json
 COPY version.txt version.txt
@@ -59,7 +60,7 @@ COPY core/php/src core/php/src
 COPY core/php/test core/php/test
 COPY --from=composer-dev-deps /workspace/core/php/vendor core/php/vendor
 
-RUN bun install
+RUN bun install --frozen-lockfile
 
 RUN if [ "${RUN_LINT}" = "true" ]; then bun run lint:all; fi
 

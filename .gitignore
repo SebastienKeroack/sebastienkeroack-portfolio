@@ -27,5 +27,4 @@ build/
 vendor/
 
 # Bun build and dependency
-bun.lock
 node_modules/
