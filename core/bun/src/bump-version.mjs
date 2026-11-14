@@ -11,27 +11,9 @@
  * Apache License
  */
 
-import { replaceVersionText, Version } from './internal/version.mjs';
+import { Version } from './internal/version.mjs';
 
 const { versionPath, packagePath } = globalThis.path;
 const version = await Version.load(versionPath);
-const [versionText, packageJson] = await Promise.all([
-  Bun.file(versionPath).text(),
-  Bun.file(packagePath).json(),
-]);
-
-if (
-  !packageJson ||
-  typeof packageJson !== 'object' ||
-  Array.isArray(packageJson)
-)
-  throw new Error('package.json must be a JSON object');
-if (!Object.hasOwn(packageJson, 'version'))
-  throw new Error('package.json must have a root version');
-
-packageJson.version = version.toString();
-await Promise.all([
-  Bun.write(versionPath, replaceVersionText(versionText, version.toString())),
-  Bun.write(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`),
-]);
+await version.write(versionPath, packagePath);
 console.log('Version synced to', version.toString());

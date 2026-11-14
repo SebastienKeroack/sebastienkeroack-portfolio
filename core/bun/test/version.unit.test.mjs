@@ -13,26 +13,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import {
-  replaceFieldVersionJson,
-  replaceVersionText,
-  Version,
-} from '../src/internal/version.mjs';
-
-describe('replaceFieldVersionJson', () => {
-  test('Updates version field in package.json', () => {
-    const ans = replaceFieldVersionJson(
-      `{
-      "name": "test-package",
-      "version": "1.2.3-456+abcdef1",
-      "description": "A test package"
-      }`,
-      '999.999.999-999999999+FFFFF9',
-    );
-    expect(typeof ans).toBe('string');
-    expect(ans).toContain('"version": "999.999.999-999999999+FFFFF9"');
-  });
-});
+import { replaceVersionText, Version } from '../src/internal/version.mjs';
 
 describe('replaceVersionText', () => {
   test('Replaces the first non-comment line and preserves the rest', () => {

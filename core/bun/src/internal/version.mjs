@@ -37,17 +37,6 @@ function getFirstVersionLine(text) {
 }
 
 /**
- * Replaces the "version" field in a JSON string with a new version value.
- *
- * @param {string} json - The JSON string to update.
- * @param {string} version - The new version string to insert.
- * @returns {string} The updated JSON string with the new version.
- */
-export function replaceFieldVersionJson(json, version) {
-  return json.replace(/("version"\s*:\s*")[^"]+(")/, `$1${version}$2`);
-}
-
-/**
  * Replaces the first non-empty, non-comment line of version.txt.
  *
  * @param {string} text - The current version.txt contents.
@@ -132,14 +121,24 @@ export class Version {
    * @returns {Promise<void>} Resolves when both files are written.
    */
   async write(versionPath, packagePath) {
-    const [versionText, packageText] = await Promise.all([
+    const [versionText, packageJson] = await Promise.all([
       Bun.file(versionPath).text(),
-      Bun.file(packagePath).text(),
+      Bun.file(packagePath).json(),
     ]);
 
+    if (
+      !packageJson ||
+      typeof packageJson !== 'object' ||
+      Array.isArray(packageJson)
+    )
+      throw new Error('package.json must be a JSON object');
+    if (!Object.hasOwn(packageJson, 'version'))
+      throw new Error('package.json must have a root version');
+
+    packageJson.version = this.#value;
     await Promise.all([
       Bun.write(versionPath, replaceVersionText(versionText, this.#value)),
-      Bun.write(packagePath, replaceFieldVersionJson(packageText, this.#value)),
+      Bun.write(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`),
     ]);
   }
 }
