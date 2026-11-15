@@ -1,0 +1,9 @@
+{
+  "target": {
+    "static": {
+      "context": ".",
+      "dockerfile": "ci/Dockerfile",
+      "target": "runtime-static"
+    }
+  }
+}

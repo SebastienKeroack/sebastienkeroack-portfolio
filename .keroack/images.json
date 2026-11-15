@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "bake_file": "docker-bake.json",
+  "images": {
+    "static": {
+      "repository": "registry.mgmt.yqb1.keroack.internal:18443/sites/portfolio-static",
+      "build_paths": [
+        "bun.lock",
+        "bunfig.toml",
+        "ci/Dockerfile",
+        "ci/nginx/http.conf",
+        "ci/nginx/server.conf",
+        "ci/nginx/static.conf",
+        "core/bun",
+        "core/public_html",
+        "jsconfig.json",
+        "package.json",
+        "version.txt"
+      ]
+    }
+  }
+}

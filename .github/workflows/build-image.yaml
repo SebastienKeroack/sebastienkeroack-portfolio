@@ -1,0 +1,82 @@
+name: Build image
+
+# The portfolio's image producer for M2 (PF151 A). On the runner set the repository variable
+# KEROACK_RUNNERS names, plain Buildx builds the one image .keroack/images.json declares,
+# twice, from its Bake file, and the run keeps its OCI archive for a day; the estate's publisher
+# takes it from there. Infra's images stub replaces this file once Infra is public. The job holds
+# no credential, and a repository without the variable skips it.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build image
+    if: vars.KEROACK_RUNNERS != ''
+    runs-on: ${{ vars.KEROACK_RUNNERS }}
+    timeout-minutes: 45
+    container:
+      # The runner image, whose Buildx drives the BuildKit daemon beside the job.
+      image: >-
+        ghcr.io/actions/actions-runner:2.338.2@sha256:6d0b2d80d80f143f77dcb676e50920100bbb547e39e883454d57f45ab8c31300
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the image twice and export its archive
+        id: image
+        shell: bash
+        run: |
+          # Native gap: Bake builds and exports the image but compares no second build's digest.
+          set -euo pipefail
+          descriptor=.keroack/images.json
+          target="$(jq -er '.images | keys | if length == 1 then .[0] else error("declare one image") end' "$descriptor")"
+          bake_file="$(jq -er .bake_file "$descriptor")"
+          directory="$RUNNER_TEMP/image"
+          mkdir -m 0700 -- "$directory"
+          # The commit's time pins every timestamp the build writes. The runner, not the job's
+          # user, owns the workspace, so Git trusts it for this one command.
+          epoch="$(git -c safe.directory="$GITHUB_WORKSPACE" log -1 --format=%ct HEAD)"
+          buildx=/usr/local/lib/docker/cli-plugins/docker-buildx
+          "$buildx" create --name portfolio --driver remote "$BUILDKIT_HOST" > /dev/null
+          build() {
+            "$buildx" bake --builder portfolio --file "$bake_file" \
+              --allow "fs.write=$directory" --provenance=false --sbom=false \
+              --set "$target.platform=linux/amd64" --set "$target.args.SOURCE_DATE_EPOCH=$epoch" \
+              --set "$target.output=type=oci,dest=$directory/$1,rewrite-timestamp=true" "${@:2}" "$target"
+          }
+          manifests() {
+            tar -xOf "$directory/$1" index.json | jq -c '[.manifests[] | {mediaType, digest}]'
+          }
+          build "$target.oci.tar"
+          # Built again without any cache, the same sources must make the same image.
+          build again.oci.tar --no-cache
+          first="$(manifests "$target.oci.tar")"
+          again="$(manifests again.oci.tar)"
+          if [[ "$first" != "$again" ]]; then
+            echo "error: $target built again without cache holds $again, not $first: the image is not reproducible" >&2
+            exit 1
+          fi
+          if ! jq -e 'length == 1 and .[0].mediaType == "application/vnd.oci.image.manifest.v1+json"' <<< "$first" > /dev/null; then
+            echo "error: $target.oci.tar holds $first, not one image manifest" >&2
+            exit 1
+          fi
+          rm -- "$directory/again.oci.tar"
+          echo "$target $(jq -r '.[0].digest' <<< "$first")"
+          echo "archive=$directory/$target.oci.tar" >> "$GITHUB_OUTPUT"
+      - name: Upload the image archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: ${{ steps.image.outputs.archive }}
+          archive: false
+          retention-days: 1
+          if-no-files-found: error
