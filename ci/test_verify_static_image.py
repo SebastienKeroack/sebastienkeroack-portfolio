@@ -42,7 +42,7 @@ def tar_bytes(files, directories=()):
     return output.getvalue()
 
 
-def image_fixture(destination, *, missing=None, architecture="amd64", incomplete_archive=False):
+def image_fixture(destination, *, missing=None, **archive_options):
     def page(lang, body, head=""):
         return (f'<html lang="{lang}"><head><title>Portfolio</title>{head}</head>'
                 f'<body>{body}</body></html>').encode()
@@ -78,15 +78,16 @@ def image_fixture(destination, *, missing=None, architecture="amd64", incomplete
                 lang, f"<header></header><main>{heading}</main><footer></footer>", head
             )
 
-    if missing in lower:
-        del lower[missing]
     if missing in upper:
         del upper[missing]
+    elif missing in lower:
+        del lower[missing]
 
-    return write_archive(destination, lower, upper, architecture, incomplete_archive)
+    return write_archive(destination, lower, upper, **archive_options)
 
 
-def write_archive(destination, lower, upper, architecture="amd64", incomplete_archive=False):
+def write_archive(destination, lower, upper, *, architecture="amd64", incomplete_archive=False,
+                  extra_manifest=False, stale_manifest_size=False, missing_diff_id=False):
     archive = {"oci-layout": b'{"imageLayoutVersion":"1.0.0"}'}
 
     def blob(media_type, data):
@@ -97,6 +98,9 @@ def write_archive(destination, lower, upper, architecture="amd64", incomplete_ar
         return {"mediaType": OCI + media_type, "size": len(data), "digest": "sha256:" + digest}
 
     layers = [tar_bytes(lower), tar_bytes(upper)]
+    diff_ids = ["sha256:" + hashlib.sha256(layer).hexdigest() for layer in layers]
+    if missing_diff_id:
+        diff_ids.pop()
     config = blob("config.v1+json", {
         "architecture": architecture,
         "os": "linux",
@@ -107,23 +111,34 @@ def write_archive(destination, lower, upper, architecture="amd64", incomplete_ar
         },
         "rootfs": {
             "type": "layers",
-            "diff_ids": ["sha256:" + hashlib.sha256(layer).hexdigest() for layer in layers],
+            "diff_ids": diff_ids,
         },
     })
     descriptors = [
         blob("layer.v1.tar", layers[0]),
         blob("layer.v1.tar+gzip", gzip.compress(layers[1])),
     ]
-    manifest = blob("manifest.v1+json", {
+    image = {
         "schemaVersion": 2,
         "mediaType": OCI + "manifest.v1+json",
         "config": config,
         "layers": descriptors,
-    })
+    }
+    manifest = blob("manifest.v1+json", image)
+    if stale_manifest_size:
+        manifest["size"] += 1
     if incomplete_archive:
         _, digest = descriptors[-1]["digest"].split(":")
         del archive[f"blobs/sha256/{digest}"]
     index = {"schemaVersion": 2, "manifests": [manifest]}
+    if extra_manifest:
+        other = blob("manifest.v1+json", {**image, "annotations": {
+            "org.opencontainers.image.title": "Other fixture image",
+        }})
+        reference = "org.opencontainers.image.ref.name"
+        manifest["annotations"] = {reference: "static"}
+        other["annotations"] = {reference: "other"}
+        index["manifests"].append(other)
     archive["index.json"] = json.dumps(index).encode()
     destination.write_bytes(tar_bytes(archive, ("blobs", "blobs/sha256")))
     return manifest["digest"]
@@ -172,7 +187,7 @@ class VerifyStaticImage(unittest.TestCase):
         digest = image_fixture(self.archive, missing="etc/nginx/nginx.conf")
         result = self.verify(digest)
         self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertIn("etc/nginx/nginx.conf", result.stderr)
+        self.assertIn("/etc/nginx/nginx.conf differs from ci/nginx/static.conf", result.stderr)
 
     def test_refuses_php_left_in_effective_root(self):
         digest = image_fixture(self.archive, missing=WEB + "en/contact/.wh.contact-form-submit.php")
@@ -192,11 +207,30 @@ class VerifyStaticImage(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("linux/amd64", result.stderr)
 
+    def test_refuses_two_index_manifests(self):
+        digest = image_fixture(self.archive, extra_manifest=True)
+        result = self.verify(digest)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("expected exactly one OCI image manifest", result.stderr)
+
+    def test_refuses_stale_archive_manifest_size(self):
+        digest = image_fixture(self.archive, stale_manifest_size=True)
+        result = self.verify(digest)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("manifest size mismatch with the archive descriptor", result.stderr)
+
+    def test_refuses_layer_without_diff_id(self):
+        digest = image_fixture(self.archive, missing_diff_id=True)
+        result = self.verify(digest)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("expected one rootfs diff ID per layer", result.stderr)
+
     def test_refuses_archive_missing_a_layer(self):
         digest = image_fixture(self.archive, incomplete_archive=True)
         result = self.verify(digest)
         self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertIn("expected one regular archive member blobs/sha256/", result.stderr)
+        self.assertIn("skopeo failed:", result.stderr)
+        self.assertIn("no such file or directory", result.stderr)
 
 
 if __name__ == "__main__":

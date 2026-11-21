@@ -1,7 +1,6 @@
 # Native gap: OCI tools unpack the image but cannot check the portfolio's file contract.
 
 import argparse
-import gzip
 import hashlib
 from html.parser import HTMLParser
 import json
@@ -42,65 +41,58 @@ def sha256(stream):
     return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def verify_archive(path, expected):
+def archive_manifest(path, expected):
     with tarfile.open(path, "r:") as archive:
-        def member(name):
+        def metadata(name):
             matches = [entry for entry in archive.getmembers()
                        if entry.name.removeprefix("./") == name]
             require(len(matches) == 1 and matches[0].isfile(),
                     f"expected one regular archive member {name}")
-            return matches[0]
+            with archive.extractfile(matches[0]) as stream:
+                return json.load(stream)
 
-        def blob(descriptor):
-            digest = descriptor["digest"]
-            require(SHA256.fullmatch(digest), f"expected SHA-256 blob digest: {digest}")
-            entry = member("blobs/sha256/" + digest[7:])
-            require(entry.size == descriptor["size"], f"blob size mismatch: {digest}")
-            stream = archive.extractfile(entry)
-            require("sha256:" + sha256(stream) == digest, f"blob digest mismatch: {digest}")
-            stream.seek(0)
-            return stream
-
-        require(json.load(archive.extractfile(member("oci-layout")))["imageLayoutVersion"] == "1.0.0",
+        require(metadata("oci-layout")["imageLayoutVersion"] == "1.0.0",
                 "expected OCI image layout version 1.0.0")
-        index = json.load(archive.extractfile(member("index.json")))
-        manifests = index["manifests"]
-        require(index["schemaVersion"] == 2 and len(manifests) == 1
-                and manifests[0]["mediaType"] == OCI + "manifest.v1+json",
-                "expected exactly one OCI image manifest")
-        descriptor = manifests[0]
-        require(descriptor["digest"] == expected,
-                f"manifest digest mismatch: expected {expected}, found {descriptor['digest']}")
-        manifest = json.load(blob(descriptor))
-        require(manifest["schemaVersion"] == 2
-                and manifest.get("mediaType", OCI + "manifest.v1+json") == OCI + "manifest.v1+json",
-                "expected an OCI image manifest")
-        require(manifest["config"]["mediaType"] == OCI + "config.v1+json",
-                "expected an OCI image config")
-        config = json.load(blob(manifest["config"]))
-        platform = descriptor.get("platform", config)
-        require(all((record.get("os"), record.get("architecture")) == ("linux", "amd64")
-                    for record in (platform, config)), "expected linux/amd64")
-        runtime = config["config"]
-        require(runtime.get("User") == "65532:65532", "expected OCI user 65532:65532")
-        require(runtime.get("Entrypoint") == ["/usr/sbin/nginx"], "expected the Nginx entrypoint")
-        require("8080/tcp" in runtime.get("ExposedPorts", {}), "expected OCI port 8080/tcp")
+        index = metadata("index.json")
+    manifests = index["manifests"]
+    require(index["schemaVersion"] == 2 and len(manifests) == 1
+            and manifests[0]["mediaType"] == OCI + "manifest.v1+json",
+            "expected exactly one OCI image manifest")
+    descriptor = manifests[0]
+    require(descriptor["digest"] == expected,
+            f"manifest digest mismatch: expected {expected}, found {descriptor['digest']}")
+    return descriptor
 
-        rootfs = config["rootfs"]
-        layers, diff_ids = manifest["layers"], rootfs["diff_ids"]
-        require(rootfs["type"] == "layers" and len(layers) == len(diff_ids) > 0,
-                "expected one rootfs diff ID per layer")
-        for layer, diff_id in zip(layers, diff_ids):
-            media_type = layer["mediaType"]
-            with blob(layer) as stream:
-                if media_type == OCI + "layer.v1.tar+gzip":
-                    with gzip.GzipFile(fileobj=stream) as contents:
-                        actual = "sha256:" + sha256(contents)
-                elif media_type == OCI + "layer.v1.tar":
-                    actual = layer["digest"]
-                else:
-                    raise ValueError(f"unsupported OCI layer media type: {media_type}")
-            require(actual == diff_id, f"rootfs diff ID mismatch for layer {layer['digest']}")
+
+def verify_config(layout, descriptor):
+    blobs = layout / "blobs/sha256"
+    raw_manifest = (blobs / descriptor["digest"][7:]).read_bytes()
+    # Skopeo writes the actual manifest size into the new index.
+    require(len(raw_manifest) == descriptor["size"], "manifest size mismatch with the archive descriptor")
+    manifest = json.loads(raw_manifest)
+    require(manifest["schemaVersion"] == 2
+            and manifest.get("mediaType", OCI + "manifest.v1+json") == OCI + "manifest.v1+json",
+            "expected an OCI image manifest")
+    config_descriptor = manifest["config"]
+    require(config_descriptor["mediaType"] == OCI + "config.v1+json", "expected an OCI image config")
+    digest = config_descriptor["digest"]
+    require(SHA256.fullmatch(digest), "expected a SHA-256 config digest")
+    config = json.loads((blobs / digest[7:]).read_bytes())
+    for platform in (descriptor.get("platform", config), config):
+        require((platform.get("os"), platform.get("architecture")) == ("linux", "amd64"),
+                "expected linux/amd64")
+    runtime = config["config"]
+    require(runtime.get("User") == "65532:65532", "expected OCI user 65532:65532")
+    require(runtime.get("Entrypoint") == ["/usr/sbin/nginx"], "expected the Nginx entrypoint")
+    require("8080/tcp" in runtime.get("ExposedPorts", {}), "expected OCI port 8080/tcp")
+
+    layers = manifest["layers"]
+    require(len(layers) == len(config["rootfs"]["diff_ids"]) > 0,
+            "expected one rootfs diff ID per layer")
+    for layer in layers:
+        media_type = layer["mediaType"]
+        require(media_type in (OCI + "layer.v1.tar", OCI + "layer.v1.tar+gzip"),
+                f"unsupported OCI layer media type: {media_type}")
 
 
 class Page(HTMLParser):
@@ -253,8 +245,9 @@ def main():
     parser.add_argument("--expected-manifest-digest", required=True, help="sha256 digest from the build")
     parser.add_argument("--policy", type=Path, required=True, help="containers/image policy for the local copy")
     args = parser.parse_args()
+    digest = args.expected_manifest_digest
     try:
-        require(SHA256.fullmatch(args.expected_manifest_digest), "expected a sha256: manifest digest")
+        require(SHA256.fullmatch(digest), "expected a sha256: manifest digest")
         with tempfile.TemporaryDirectory(prefix="portfolio-image-") as directory:
             work = Path(directory)
             archive = work / "static.oci.tar"
@@ -262,18 +255,16 @@ def main():
             shutil.copyfile(args.archive, archive)
             with archive.open("rb") as stream:
                 archive_hash = sha256(stream)
-            verify_archive(archive, args.expected_manifest_digest)
+            descriptor = archive_manifest(archive, digest)
 
-            layout = f"{work / 'layout'}:static"
-            digest_file = work / "manifest-digest"
+            layout = work / "layout"
+            image = f"{layout}:static"
             native("skopeo", "--tmpdir", directory, "--policy", str(args.policy),
                    "copy", "--quiet", "--preserve-digests",
-                   "--dest-oci-accept-uncompressed-layers", "--digestfile", str(digest_file),
-                   f"oci-archive:{archive}", "oci:" + layout)
-            digest = digest_file.read_text().strip()
-            require(digest == args.expected_manifest_digest, f"Skopeo copied a different manifest: {digest}")
+                   "--dest-oci-accept-uncompressed-layers", f"oci-archive:{archive}", "oci:" + image)
+            verify_config(layout, descriptor)
             bundle = work / "bundle"
-            native("umoci", "unpack", "--rootless", "--image", layout, str(bundle))
+            native("umoci", "unpack", "--rootless", "--image", image, str(bundle))
             evidence = verify_files(bundle / "rootfs")
         print(json.dumps({"archive_sha256": archive_hash, "manifest_digest": digest,
                           "platform": "linux/amd64", "files_sha256": evidence}, indent=2, sort_keys=True))
