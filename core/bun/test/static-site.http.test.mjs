@@ -109,6 +109,10 @@ describe.skipIf(!base)('the static profile', () => {
       if (contains) expect(text).toContain(contains);
       for (const absent of lacks) expect(text).not.toContain(absent);
       if (heading) {
+        const contentType = response.headers.get('content-type');
+        expect(contentType?.split(';', 1)[0].trim().toLowerCase()).toBe(
+          'text/html',
+        );
         let lang;
         let headingText = '';
         const headings = [];
