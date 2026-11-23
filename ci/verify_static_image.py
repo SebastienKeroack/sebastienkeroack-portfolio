@@ -16,6 +16,8 @@ from urllib.parse import unquote, urljoin, urlsplit
 
 
 OCI = "application/vnd.oci.image."
+LEGACY_PLATFORM = "linux/amd64"
+PLATFORMS = {LEGACY_PLATFORM, "linux/arm64"}
 SHA256 = re.compile(r"sha256:[0-9a-f]{64}")
 WEB_ROOT = "var/www/public_html"
 HOST = "sebastienkeroack.com"
@@ -41,46 +43,67 @@ def sha256(stream):
     return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def archive_manifest(path, expected):
+def platform_name(platform):
+    return f"{platform.get('os')}/{platform.get('architecture')}"
+
+
+def archive_manifests(path, expected, multi_platform):
     with tarfile.open(path, "r:") as archive:
-        def metadata(name):
+        def member(name):
             matches = [entry for entry in archive.getmembers()
                        if entry.name.removeprefix("./") == name]
             require(len(matches) == 1 and matches[0].isfile(),
                     f"expected one regular archive member {name}")
             with archive.extractfile(matches[0]) as stream:
-                return json.load(stream)
+                return stream.read()
 
-        require(metadata("oci-layout")["imageLayoutVersion"] == "1.0.0",
+        def blob(descriptor, kind):
+            digest = descriptor["digest"]
+            require(SHA256.fullmatch(digest), f"expected a SHA-256 {kind} digest")
+            raw = member("blobs/sha256/" + digest[7:])
+            require(len(raw) == descriptor["size"],
+                    f"{kind} size mismatch with the archive descriptor")
+            require(hashlib.sha256(raw).hexdigest() == digest[7:], f"{kind} digest mismatch")
+            return json.loads(raw)
+
+        require(json.loads(member("oci-layout"))["imageLayoutVersion"] == "1.0.0",
                 "expected OCI image layout version 1.0.0")
-        index = metadata("index.json")
-    manifests = index["manifests"]
-    require(index["schemaVersion"] == 2 and len(manifests) == 1
-            and manifests[0]["mediaType"] == OCI + "manifest.v1+json",
-            "expected exactly one OCI image manifest")
-    descriptor = manifests[0]
-    require(descriptor["digest"] == expected,
-            f"manifest digest mismatch: expected {expected}, found {descriptor['digest']}")
-    return descriptor
+        layout_index = json.loads(member("index.json"))
+        roots = layout_index["manifests"]
+        kind = "index" if multi_platform else "manifest"
+        media_type = OCI + kind + ".v1+json"
+        require(layout_index["schemaVersion"] == 2 and len(roots) == 1
+                and roots[0]["mediaType"] == media_type, f"expected exactly one OCI image {kind}")
+        root = roots[0]
+        require(root["digest"] == expected,
+                f"{kind} digest mismatch: expected {expected}, found {root['digest']}")
+
+        if multi_platform:
+            index = blob(root, "index")
+            require(index["schemaVersion"] == 2 and index.get("mediaType") == media_type,
+                    "expected an OCI image index")
+            members = index["manifests"]
+            descriptors = {platform_name(member["platform"]): member for member in members}
+            require(len(members) == len(PLATFORMS) and set(descriptors) == set(PLATFORMS)
+                    and all(member["mediaType"] == OCI + "manifest.v1+json" for member in members),
+                    "expected one OCI manifest each for linux/amd64 and linux/arm64")
+        else:
+            descriptors = {LEGACY_PLATFORM: root}
+        for platform, descriptor in descriptors.items():
+            verify_config(blob, descriptor, platform)
+        return descriptors
 
 
-def verify_config(layout, descriptor):
-    blobs = layout / "blobs/sha256"
-    raw_manifest = (blobs / descriptor["digest"][7:]).read_bytes()
-    # Skopeo writes the actual manifest size into the new index.
-    require(len(raw_manifest) == descriptor["size"], "manifest size mismatch with the archive descriptor")
-    manifest = json.loads(raw_manifest)
+def verify_config(blob, descriptor, expected_platform):
+    manifest = blob(descriptor, "manifest")
     require(manifest["schemaVersion"] == 2
             and manifest.get("mediaType", OCI + "manifest.v1+json") == OCI + "manifest.v1+json",
             "expected an OCI image manifest")
     config_descriptor = manifest["config"]
     require(config_descriptor["mediaType"] == OCI + "config.v1+json", "expected an OCI image config")
-    digest = config_descriptor["digest"]
-    require(SHA256.fullmatch(digest), "expected a SHA-256 config digest")
-    config = json.loads((blobs / digest[7:]).read_bytes())
+    config = blob(config_descriptor, "config")
     for platform in (descriptor.get("platform", config), config):
-        require((platform.get("os"), platform.get("architecture")) == ("linux", "amd64"),
-                "expected linux/amd64")
+        require(platform_name(platform) == expected_platform, f"expected {expected_platform}")
     runtime = config["config"]
     require(runtime.get("User") == "65532:65532", "expected OCI user 65532:65532")
     require(runtime.get("Entrypoint") == ["/usr/sbin/nginx"], "expected the Nginx entrypoint")
@@ -242,12 +265,16 @@ def native(*command):
 def main():
     parser = argparse.ArgumentParser(description="Verify an offline portfolio static OCI archive.")
     parser.add_argument("archive", type=Path, help="path to static.oci.tar")
-    parser.add_argument("--expected-manifest-digest", required=True, help="sha256 digest from the build")
+    expected = parser.add_mutually_exclusive_group(required=True)
+    expected.add_argument("--expected-manifest-digest", help="legacy linux/amd64 manifest digest")
+    expected.add_argument("--expected-index-digest", help="amd64 and arm64 image index digest from the build")
     parser.add_argument("--policy", type=Path, required=True, help="containers/image policy for the local copy")
     args = parser.parse_args()
-    digest = args.expected_manifest_digest
+    multi_platform = args.expected_index_digest is not None
+    digest = args.expected_index_digest if multi_platform else args.expected_manifest_digest
+    kind = "index" if multi_platform else "manifest"
     try:
-        require(SHA256.fullmatch(digest), "expected a sha256: manifest digest")
+        require(SHA256.fullmatch(digest), f"expected a sha256: {kind} digest")
         with tempfile.TemporaryDirectory(prefix="portfolio-image-") as directory:
             work = Path(directory)
             archive = work / "static.oci.tar"
@@ -255,19 +282,28 @@ def main():
             shutil.copyfile(args.archive, archive)
             with archive.open("rb") as stream:
                 archive_hash = sha256(stream)
-            descriptor = archive_manifest(archive, digest)
-
-            layout = work / "layout"
-            image = f"{layout}:static"
-            native("skopeo", "--tmpdir", directory, "--policy", str(args.policy),
-                   "copy", "--quiet", "--preserve-digests",
-                   "--dest-oci-accept-uncompressed-layers", f"oci-archive:{archive}", "oci:" + image)
-            verify_config(layout, descriptor)
-            bundle = work / "bundle"
-            native("umoci", "unpack", "--rootless", "--image", image, str(bundle))
-            evidence = verify_files(bundle / "rootfs")
-        print(json.dumps({"archive_sha256": archive_hash, "manifest_digest": digest,
-                          "platform": "linux/amd64", "files_sha256": evidence}, indent=2, sort_keys=True))
+            descriptors = archive_manifests(archive, digest, multi_platform)
+            platforms = {}
+            for platform, descriptor in descriptors.items():
+                os_name, architecture = platform.split("/")
+                image = f"{work / architecture}:static"
+                digest_file = work / "manifest-digest"
+                native("skopeo", "--tmpdir", directory, "--policy", str(args.policy),
+                       "--override-os", os_name, "--override-arch", architecture,
+                       "copy", "--quiet", "--preserve-digests", "--digestfile", str(digest_file),
+                       "--dest-oci-accept-uncompressed-layers", f"oci-archive:{archive}", "oci:" + image)
+                require(digest_file.read_text().strip() == descriptor["digest"],
+                        f"{platform} copy selected a different manifest digest")
+                bundle = work / f"{architecture}-bundle"
+                native("umoci", "unpack", "--rootless", "--image", image, str(bundle))
+                platforms[platform] = {"manifest_digest": descriptor["digest"],
+                                       "files_sha256": verify_files(bundle / "rootfs")}
+        evidence = {"archive_sha256": archive_hash}
+        if multi_platform:
+            evidence.update(index_digest=digest, platforms=platforms)
+        else:
+            evidence.update(platform=LEGACY_PLATFORM, **platforms[LEGACY_PLATFORM])
+        print(json.dumps(evidence, indent=2, sort_keys=True))
         return 0
     except (OSError, ValueError, TypeError, KeyError, AttributeError, EOFError, tarfile.TarError) as error:
         print(f"verify static image: {error}", file=sys.stderr)

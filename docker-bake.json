@@ -3,7 +3,8 @@
     "static": {
       "context": ".",
       "dockerfile": "ci/Dockerfile",
-      "target": "runtime-static"
+      "target": "runtime-static",
+      "platforms": ["linux/amd64", "linux/arm64"]
     }
   }
 }

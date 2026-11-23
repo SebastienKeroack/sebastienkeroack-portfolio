@@ -27,24 +27,29 @@ It is accessible at [sebastienkeroack.com](https://sebastienkeroack.com).
 
 ## Verify a static image archive
 
+The static Bake target exports one OCI image index for `linux/amd64` and
+`linux/arm64`. The build workflow compares the index digest across two builds,
+including a rebuild without cache, and logs the digest before uploading
+`static.oci.tar`.
+
 On Linux, run as an unprivileged user with Python 3.11 or later, Skopeo with
 digest-preserving OCI copy support, and umoci with rootless unpack support on
-`PATH`. Supply a local containers/image policy that permits Skopeo's copy.
-Set `manifest_digest` to the expected `sha256:…` manifest digest recorded by the
-build.
+`PATH`. Supply a local containers/image policy that permits Skopeo's copy and
+use the index digest recorded by the build.
 
 ```sh
 python3 ci/verify_static_image.py /path/to/static.oci.tar \
-  --expected-manifest-digest "$manifest_digest" \
+  --expected-index-digest "$index_digest" \
   --policy /etc/containers/policy.json
 ```
 
-The offline check accepts plain OCI archives with uncompressed or gzip-compressed
-OCI layers. It compares the image's Nginx configuration to `ci/nginx/static.conf`,
-`ci/nginx/http.conf`, and `ci/nginx/server.conf` from the verifier's checkout.
-It prints JSON with the archive SHA-256, manifest digest, platform, and hashes of
-the pages, referenced assets, and Nginx configuration it checked. Run the fixture
-tests with `python3 -B -m unittest -v ci.test_verify_static_image`.
+The offline check verifies the index and each child before checking the
+effective filesystem, static pages, referenced assets, Nginx configuration, and
+absence of PHP. It reports the archive SHA-256, the index digest, and the
+manifest and verified file hashes for each platform. Earlier single-manifest
+amd64 archives use `--expected-manifest-digest` and retain their original JSON
+format. These checks support uncompressed and gzip-compressed OCI layers. Run
+the fixtures with `python3 -B -m unittest -v ci.test_verify_static_image`.
 
 ## License
 

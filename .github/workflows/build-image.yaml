@@ -1,10 +1,7 @@
 name: Build image
 
-# The portfolio's image producer for M2 (PF151 A). On the runner set the repository variable
-# KEROACK_RUNNERS names, plain Buildx builds the one image .keroack/images.json declares,
-# twice, from its Bake file, and the run keeps its OCI archive for a day; the estate's publisher
-# takes it from there. Infra's images stub replaces this file once Infra is public. The job holds
-# no credential, and a repository without the variable skips it.
+# Build the static target twice on the configured runners and retain its OCI archive
+# for the estate publisher. This job requires only source read access.
 on:
   push:
     branches: [main]
@@ -41,6 +38,7 @@ jobs:
           descriptor=.keroack/images.json
           target="$(jq -er '.images | keys | if length == 1 then .[0] else error("declare one image") end' "$descriptor")"
           bake_file="$(jq -er .bake_file "$descriptor")"
+          platforms="$(jq -ec --arg target "$target" '.target[$target].platforms | sort' "$bake_file")"
           directory="$RUNNER_TEMP/image"
           mkdir -m 0700 -- "$directory"
           # The commit's time pins every timestamp the build writes. The runner, not the job's
@@ -51,27 +49,50 @@ jobs:
           build() {
             "$buildx" bake --builder portfolio --file "$bake_file" \
               --allow "fs.write=$directory" --provenance=false --sbom=false \
-              --set "$target.platform=linux/amd64" --set "$target.args.SOURCE_DATE_EPOCH=$epoch" \
+              --set "$target.args.SOURCE_DATE_EPOCH=$epoch" \
               --set "$target.output=type=oci,dest=$directory/$1,rewrite-timestamp=true" "${@:2}" "$target"
           }
-          manifests() {
-            tar -xOf "$directory/$1" index.json | jq -c '[.manifests[] | {mediaType, digest}]'
+          index_digest() {
+            local archive="$directory/$1" root digest size hash
+            local index="$directory/index.json"
+            root="$(tar -xOf "$archive" index.json | jq -er '
+              select(.schemaVersion == 2 and (.manifests | length) == 1)
+              | .manifests[]
+              | select(.mediaType == "application/vnd.oci.image.index.v1+json"
+                       and (.digest | test("^sha256:[0-9a-f]{64}$")))
+              | [.digest, .size] | @tsv')" || {
+              echo "error: $1 must hold one OCI image index" >&2
+              return 1
+            }
+            IFS=$'\t' read -r digest size <<< "$root"
+            tar -xOf "$archive" "blobs/sha256/${digest#sha256:}" > "$index" || return
+            hash="$(sha256sum < "$index")" || return
+            if [[ "${hash%% *}" != "${digest#sha256:}" || "$(wc -c < "$index")" != "$size" ]]; then
+              echo "error: $1 index digest or size mismatch" >&2
+              return 1
+            fi
+            jq -e --argjson platforms "$platforms" '
+              .schemaVersion == 2 and .mediaType == "application/vnd.oci.image.index.v1+json"
+              and all(.manifests[]; .mediaType == "application/vnd.oci.image.manifest.v1+json"
+                      and (.digest | test("^sha256:[0-9a-f]{64}$")))
+              and ([.manifests[].platform | .os + "/" + .architecture] | sort) == $platforms
+            ' "$index" > /dev/null || {
+              echo "error: $1 must hold one OCI image manifest per Bake platform" >&2
+              return 1
+            }
+            printf '%s\n' "$digest"
           }
           build "$target.oci.tar"
-          # Built again without any cache, the same sources must make the same image.
+          # Built again without any cache, the same sources must make the same index.
           build again.oci.tar --no-cache
-          first="$(manifests "$target.oci.tar")"
-          again="$(manifests again.oci.tar)"
+          first="$(index_digest "$target.oci.tar")"
+          again="$(index_digest again.oci.tar)"
           if [[ "$first" != "$again" ]]; then
-            echo "error: $target built again without cache holds $again, not $first: the image is not reproducible" >&2
-            exit 1
-          fi
-          if ! jq -e 'length == 1 and .[0].mediaType == "application/vnd.oci.image.manifest.v1+json"' <<< "$first" > /dev/null; then
-            echo "error: $target.oci.tar holds $first, not one image manifest" >&2
+            echo "error: $target index changed from $first to $again without cache (not reproducible)" >&2
             exit 1
           fi
           rm -- "$directory/again.oci.tar"
-          echo "$target $(jq -r '.[0].digest' <<< "$first")"
+          echo "$target $first"
           echo "archive=$directory/$target.oci.tar" >> "$GITHUB_OUTPUT"
       - name: Upload the image archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

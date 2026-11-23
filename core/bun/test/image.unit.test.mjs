@@ -39,7 +39,7 @@ describe.skipIf(!existsSync(join(root, '.git')))('the static image', () => {
     expect(image.build_paths).not.toContain(descriptor.bake_file);
   });
 
-  test("builds that image from the recipe's static stage", () => {
+  test("builds both Linux architectures from the recipe's static stage", () => {
     expect(exists('.keroack/images.json')).toBe(true);
     const { bake_file } = JSON.parse(read('.keroack/images.json'));
     expect(exists(bake_file)).toBe(true);
@@ -49,6 +49,7 @@ describe.skipIf(!existsSync(join(root, '.git')))('the static image', () => {
       context: '.',
       dockerfile: 'ci/Dockerfile',
       target: 'runtime-static',
+      platforms: ['linux/amd64', 'linux/arm64'],
     });
     expect(read('ci/Dockerfile')).toMatch(/^FROM \S+ AS runtime-static$/m);
   });
