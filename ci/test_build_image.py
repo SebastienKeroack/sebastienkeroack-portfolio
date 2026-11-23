@@ -67,6 +67,20 @@ class BuildImage(unittest.TestCase):
         with tarfile.open(path, "r:") as archive:
             return {entry.name: archive.extractfile(entry).read() for entry in archive if entry.isfile()}
 
+    def replace_tar_member(self, path, name, replacements):
+        files = self.archive_members(path)
+        original = files.pop(name)
+        with tarfile.open(path, "w") as archive:
+            for entry_name, entry_type, data in replacements(original):
+                entry = tarfile.TarInfo(entry_name)
+                entry.type = entry_type
+                entry.size = len(data)
+                archive.addfile(entry, io.BytesIO(data))
+            for entry_name, data in files.items():
+                entry = tarfile.TarInfo(entry_name)
+                entry.size = len(data)
+                archive.addfile(entry, io.BytesIO(data))
+
     def change_member(self, archive, platform, change):
         files = self.archive_members(archive)
         member = "blobs/sha256/" + self.manifests[platform].removeprefix("sha256:")
@@ -129,14 +143,48 @@ class BuildImage(unittest.TestCase):
         self.assert_refused("static.oci.tar linux/arm64 manifest")
 
     def test_refuses_a_manifest_split_across_duplicate_tar_entries(self):
-        files = self.archive_members(self.first)
         member = "blobs/sha256/" + self.manifests["linux/arm64"].removeprefix("sha256:")
-        payload = files.pop(member)
-        output = io.BytesIO()
-        with tarfile.open(fileobj=output, mode="w") as archive:
-            for name, data in [*files.items(), (member, payload[:1]), (member, payload[1:])]:
-                entry = tarfile.TarInfo(name)
-                entry.size = len(data)
-                archive.addfile(entry, io.BytesIO(data))
-        self.first.write_bytes(output.getvalue())
+        self.replace_tar_member(self.first, member, lambda payload: (
+            (member, tarfile.REGTYPE, payload[:1]),
+            (member, tarfile.REGTYPE, payload[1:]),
+        ))
+        self.assert_refused("static.oci.tar linux/arm64 manifest")
+
+    def test_refuses_layout_index_split_across_duplicate_members(self):
+        self.replace_tar_member(self.first, "index.json", lambda payload: (
+            ("index.json", tarfile.REGTYPE, payload[:1]),
+            ("index.json", tarfile.REGTYPE, payload[1:]),
+        ))
+        self.assert_refused("static.oci.tar must hold one regular index.json")
+
+    def test_refuses_duplicate_layout_index_under_dot_prefix_alias(self):
+        self.replace_tar_member(self.first, "index.json", lambda payload: (
+            ("index.json", tarfile.REGTYPE, payload),
+            ("./index.json", tarfile.REGTYPE, payload),
+        ))
+        self.assert_refused("static.oci.tar must hold one regular index.json")
+
+    def test_refuses_two_json_values_in_one_layout_index_member(self):
+        self.replace_tar_member(self.rebuild, "index.json", lambda payload: (
+            ("index.json", tarfile.REGTYPE, payload + b"\n{}"),
+        ))
+        self.assert_refused("again.oci.tar index.json must contain one JSON document")
+
+    def test_refuses_an_object_instead_of_a_layout_manifest_array(self):
+        def object_manifest(payload):
+            layout = json.loads(payload)
+            layout["manifests"] = {"entry": layout["manifests"][0]}
+            return (("index.json", tarfile.REGTYPE, json.dumps(layout).encode()),)
+
+        self.replace_tar_member(self.first, "index.json", object_manifest)
+        self.assert_refused("static.oci.tar index.json must contain one JSON document")
+
+    def test_refuses_a_single_nonregular_layout_index_member_with_intact_bytes(self):
+        # GNU tar streams an unknown type's bytes as though it were a regular file.
+        self.replace_tar_member(self.first, "index.json", lambda payload: (("index.json", b"Z", payload),))
+        self.assert_refused("static.oci.tar must hold one regular index.json")
+
+    def test_refuses_a_single_nonregular_child_member_with_intact_bytes(self):
+        member = "blobs/sha256/" + self.manifests["linux/arm64"].removeprefix("sha256:")
+        self.replace_tar_member(self.first, member, lambda payload: ((member, b"Z", payload),))
         self.assert_refused("static.oci.tar linux/arm64 manifest")
