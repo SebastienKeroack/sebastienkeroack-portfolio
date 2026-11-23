@@ -365,6 +365,36 @@ class VerifyStaticImage(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("expected exactly one OCI image manifest", result.stderr)
 
+    def test_verify_files_enforces_dual_stack_nginx_listeners(self):
+        lower, upper = fixture_layers()
+        root = Path(self.archive.parent) / "rootfs"
+        for layer in (lower, upper):
+            for name, content in layer.items():
+                if Path(name).name.startswith(".wh."):
+                    target = root / Path(name).parent / Path(name).name.removeprefix(".wh.")
+                    if target.exists():
+                        target.unlink()
+                    continue
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(content)
+        evidence = verify_static_image.verify_files(root)
+        self.assertIn("/etc/nginx/server.conf", evidence)
+        server_conf = root / "etc/nginx/server.conf"
+        ipv4_only = server_conf.read_text(encoding="utf-8").replace("listen [::]:8080;\n", "")
+        self.assertNotIn("listen [::]:8080;", ipv4_only)
+        real_read_bytes = Path.read_bytes
+
+        def fake_read_bytes(self_path):
+            if self_path.name == "server.conf":
+                return ipv4_only.encode()
+            return real_read_bytes(self_path)
+
+        with patch.object(Path, "read_bytes", fake_read_bytes):
+            server_conf.write_text(ipv4_only, encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, r"listen \[::\]:8080;"):
+                verify_static_image.verify_files(root)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,11 +1,16 @@
 name: Build image
 
-# Build the static target twice on the configured runners and retain its OCI archive
-# for the estate publisher. This job requires only source read access.
+# Build the static target on the configured runners, validate the complete dual-arch OCI
+# closure, and retain the archive and delivery receipt for the estate publisher.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      verify_reproducibility:
+        description: Rebuild without cache and compare OCI index digests
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,23 +34,47 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Build the image twice and export its archive
+      - name: Build, verify, and export the static image archive and receipt
         id: image
         shell: bash
+        env:
+          VERIFY_REPRODUCIBILITY: ${{ inputs.verify_reproducibility == true }}
         run: |
-          # Native gap: Bake exports images but does not verify or compare two archives.
+          # Native gap: Bake exports OCI archives but neither verifies full blob closure nor writes the delivery receipt.
           set -euo pipefail
           descriptor=.keroack/images.json
           target="$(jq -er '.images | keys | if length == 1 then .[0] else error("declare one image") end' "$descriptor")"
           bake_file="$(jq -er .bake_file "$descriptor")"
-          platforms="$(jq -ec --arg target "$target" '.target[$target].platforms | sort' "$bake_file")"
+          repository="$(jq -er --arg target "$target" '.images[$target].repository' "$descriptor")"
+          platforms="$(jq -ec --arg target "$target" '.images[$target].platforms | sort' "$descriptor")"
+          bake_platforms="$(jq -ec --arg target "$target" '.target[$target].platforms | sort' "$bake_file")"
+          if [[ "$platforms" != "$bake_platforms" ]]; then
+            echo "error: descriptor platforms $platforms disagree with Bake platforms $bake_platforms" >&2
+            exit 1
+          fi
           directory="$RUNNER_TEMP/image"
           mkdir -m 0700 -- "$directory"
           # The commit's time pins every timestamp the build writes. The runner, not the job's
           # user, owns the workspace, so Git trusts it for this one command.
+          commit="$(git -c safe.directory="$GITHUB_WORKSPACE" rev-parse --verify 'HEAD^{commit}')"
+          ref="${GITHUB_REF:-refs/heads/main}"
           epoch="$(git -c safe.directory="$GITHUB_WORKSPACE" log -1 --format=%ct HEAD)"
           buildx=/usr/local/lib/docker/cli-plugins/docker-buildx
           "$buildx" create --name portfolio --driver remote "$BUILDKIT_HOST" > /dev/null
+          buildkit_version="$("$buildx" inspect portfolio --bootstrap | sed -nE 's/^BuildKit version: +(.+)$/\1/p')"
+          if [[ ! "$buildkit_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ || "$buildkit_version" == *$'\n'* ]]; then
+            echo "error: unable to read remote BuildKit version" >&2
+            exit 1
+          fi
+          cache_args=()
+          if [[ -n "${KEROACK_LAYER_CACHE_PROJECT:-}" && -n "${GITHUB_REPOSITORY:-}" && "$ref" == refs/heads/main ]]; then
+            cache_hash="$(printf '%s' "$target:refs/heads/main" | sha256sum)"
+            cache_ref="${KEROACK_LAYER_CACHE_PROJECT}/${GITHUB_REPOSITORY,,}/${target}:cache-v2-${cache_hash%% *}"
+            cache_args=(
+              --set "$target.cache-from=type=registry,ref=$cache_ref"
+              --set "$target.cache-to=type=registry,ref=$cache_ref,mode=max"
+            )
+          fi
           build() {
             "$buildx" bake --builder portfolio --file "$bake_file" \
               --allow "fs.write=$directory" --provenance=false --sbom=false \
@@ -70,21 +99,32 @@ jobs:
             bytes="$(wc -c < "$output")" || return
             [[ "${hash%% *}" == "${digest#sha256:}" && "$bytes" == "$size" ]]
           }
-          index_digest() {
-            local archive="$directory/$1" names root digest size members platform child_digest child_size
-            local layout="$directory/layout.json" index="$directory/index.json"
+          verify_archive() {
+            local archive="$directory/$1" names root digest size members children platform child_digest child_size
+            local oci_layout="$directory/oci-layout.json" layout="$directory/index.json" index="$directory/parent.json"
+            local manifest="$directory/manifest.json" config="$directory/config.json" layer="$directory/layer.blob"
+            local config_meta config_digest config_size layer_count layers layer_digest layer_size
             names="$(LC_ALL=C tar -tf "$archive")" || return
+            if ! read_member "$archive" "$names" oci-layout "$oci_layout" ||
+               ! jq -ers 'select(length == 1) | .[0] | select(type == "object" and .imageLayoutVersion == "1.0.0")' \
+                 "$oci_layout" > /dev/null; then
+              echo "error: $1 must hold one regular oci-layout" >&2
+              return 1
+            fi
             if ! read_member "$archive" "$names" index.json "$layout"; then
               echo "error: $1 must hold one regular index.json" >&2
               return 1
             fi
             root="$(jq -ers '
+              def count: type == "number" and . == floor and . >= 0;
               select(length == 1)
               | .[]
               | select(.schemaVersion == 2 and (.manifests | type == "array" and length == 1))
               | .manifests[]
               | select(.mediaType == "application/vnd.oci.image.index.v1+json"
-                       and (.digest | test("^sha256:[0-9a-f]{64}$")))
+                       and (.digest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
+                       and (.size | count)
+                       and ((has("urls") or has("data") or has("platform")) | not))
               | [.digest, .size] | @tsv' "$layout")" || {
               echo "error: $1 index.json must contain one JSON document naming one OCI image index" >&2
               return 1
@@ -95,12 +135,22 @@ jobs:
               return 1
             fi
             members="$(jq -ers --argjson platforms "$platforms" '
+              def count: type == "number" and . == floor and . >= 0;
+              def runnable: type == "object" and .os == "linux"
+                and (keys - ["architecture", "os", "variant"] == [])
+                and ((.architecture == "amd64" and (has("variant") | not))
+                     or (.architecture == "arm64" and ((has("variant") | not) or .variant == "v8")));
               select(length == 1)
               | .[]
               | select(.schemaVersion == 2 and .mediaType == "application/vnd.oci.image.index.v1+json"
-                     and (.manifests | type == "array")
+                     and ((has("artifactType") or has("subject") or has("config") or has("layers")) | not)
+                     and (.manifests | type == "array" and length == ($platforms | length))
                      and all(.manifests[]; .mediaType == "application/vnd.oci.image.manifest.v1+json"
-                             and (.digest | test("^sha256:[0-9a-f]{64}$")))
+                             and (.digest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
+                             and (.size | count)
+                             and ((has("urls") or has("data")) | not)
+                             and (.platform | runnable))
+                     and ([.manifests[].digest] | unique | length) == (.manifests | length)
                      and ([.manifests[].platform | .os + "/" + .architecture] | sort) == $platforms)
               | .manifests[]
               | [(.platform | .os + "/" + .architecture), .digest, .size] | @tsv
@@ -108,30 +158,128 @@ jobs:
               echo "error: $1 must hold one OCI image manifest per Bake platform" >&2
               return 1
             }
+            children='{}'
             while IFS=$'\t' read -r platform child_digest child_size; do
-              if ! verify_blob "$archive" "$names" "$child_digest" "$child_size" "$directory/manifest.json"; then
+              if ! verify_blob "$archive" "$names" "$child_digest" "$child_size" "$manifest"; then
                 echo "error: $1 $platform manifest must be one regular archive member matching its digest and size" >&2
                 return 1
               fi
+              config_meta="$(jq -ers '
+                def count: type == "number" and . == floor and . >= 0;
+                def described: type == "object"
+                  and (.digest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
+                  and (.size | count)
+                  and ((has("urls") or has("data")) | not);
+                def layer_type: IN(
+                  "application/vnd.oci.image.layer.v1.tar",
+                  "application/vnd.oci.image.layer.v1.tar+gzip",
+                  "application/vnd.oci.image.layer.v1.tar+zstd"
+                );
+                select(length == 1)
+                | .[0]
+                | select(.schemaVersion == 2
+                       and .mediaType == "application/vnd.oci.image.manifest.v1+json"
+                       and ((has("artifactType") or has("subject") or has("manifests")) | not)
+                       and (.config | described and .mediaType == "application/vnd.oci.image.config.v1+json")
+                       and (.layers | type == "array" and length > 0
+                            and all(.[]; described and (.mediaType | layer_type))))
+                | [.config.digest, .config.size, (.layers | length)] | @tsv
+              ' "$manifest")" || {
+                echo "error: $1 $platform manifest must be one valid OCI image manifest" >&2
+                return 1
+              }
+              IFS=$'\t' read -r config_digest config_size layer_count <<< "$config_meta"
+              if ! verify_blob "$archive" "$names" "$config_digest" "$config_size" "$config" ||
+                 ! jq -ers --arg platform "$platform" --argjson layer_count "$layer_count" '
+                   select(length == 1)
+                   | .[0]
+                   | select(type == "object"
+                          and ((.os + "/" + .architecture) == $platform)
+                          and (.rootfs.diff_ids | type == "array" and length == $layer_count))
+                 ' "$config" > /dev/null; then
+                echo "error: $1 $platform config must be one regular archive member matching its digest, size, and platform" >&2
+                return 1
+              fi
+              layers="$(jq -r '.layers[] | [.digest, .size] | @tsv' "$manifest")"
+              while IFS=$'\t' read -r layer_digest layer_size; do
+                if ! verify_blob "$archive" "$names" "$layer_digest" "$layer_size" "$layer"; then
+                  echo "error: $1 $platform layer $layer_digest must be one regular archive member matching its digest and size" >&2
+                  return 1
+                fi
+              done <<< "$layers"
+              children="$(jq -c --arg platform "$platform" --arg digest "$child_digest" \
+                '. + {($platform): $digest}' <<< "$children")"
             done <<< "$members"
-            printf '%s\n' "$digest"
+            printf '%s\t%s\n' "$digest" "$children"
           }
-          build "$target.oci.tar"
-          # Built again without any cache, the same sources must make the same index.
-          build again.oci.tar --no-cache
-          first="$(index_digest "$target.oci.tar")"
-          again="$(index_digest again.oci.tar)"
-          if [[ "$first" != "$again" ]]; then
-            echo "error: $target index changed from $first to $again without cache (not reproducible)" >&2
-            exit 1
+          build "$target.oci.tar" "${cache_args[@]}"
+          verified="$(verify_archive "$target.oci.tar")"
+          IFS=$'\t' read -r first children <<< "$verified"
+          if [[ "${VERIFY_REPRODUCIBILITY:-false}" == "true" ]]; then
+            # When requested, rebuild without cache and require the same OCI index closure.
+            build again.oci.tar --no-cache
+            rebuilt="$(verify_archive again.oci.tar)"
+            IFS=$'\t' read -r again _ <<< "$rebuilt"
+            if [[ "$first" != "$again" ]]; then
+              echo "error: $target index changed from $first to $again without cache (not reproducible)" >&2
+              exit 1
+            fi
+            rm -- "$directory/again.oci.tar"
           fi
-          rm -- "$directory/again.oci.tar"
+          archive_sha="$(sha256sum < "$directory/$target.oci.tar")"
+          archive_sha="${archive_sha%% *}"
+          receipt="$directory/images-receipt.json"
+          jq -n \
+            --arg commit "$commit" \
+            --arg ref "$ref" \
+            --arg target "$target" \
+            --arg repository "$repository" \
+            --argjson platforms "$platforms" \
+            --arg buildkit "$buildkit_version" \
+            --arg root "$first" \
+            --arg archive_sha "$archive_sha" \
+            --argjson children "$children" '
+            {
+              schema: 1,
+              source_commit: $commit,
+              git_ref: $ref,
+              images: {
+                ($target): {
+                  repository: $repository,
+                  container_client: "remote",
+                  source: "built",
+                  published: false,
+                  digest: null,
+                  reference: null,
+                  platforms: $platforms
+                }
+              },
+              export: {
+                buildkit: $buildkit,
+                archives: {
+                  ($target): {
+                    digest: $root,
+                    sha256: $archive_sha,
+                    children: $children
+                  }
+                }
+              }
+            }
+          ' > "$receipt"
           echo "$target $first"
           echo "archive=$directory/$target.oci.tar" >> "$GITHUB_OUTPUT"
+          echo "receipt=$receipt" >> "$GITHUB_OUTPUT"
       - name: Upload the image archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           path: ${{ steps.image.outputs.archive }}
+          archive: false
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload the image receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: ${{ steps.image.outputs.receipt }}
           archive: false
           retention-days: 1
           if-no-files-found: error

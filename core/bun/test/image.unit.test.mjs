@@ -27,16 +27,29 @@ describe.skipIf(!existsSync(join(root, '.git')))('the static image', () => {
     expect(descriptor.schema).toBe(1);
     expect(Object.keys(descriptor.images)).toEqual(['static']);
     const image = descriptor.images.static;
-    expect(Object.keys(image).sort()).toEqual(['build_paths', 'repository']);
+    expect(Object.keys(image).sort()).toEqual([
+      'build_paths',
+      'platforms',
+      'repository',
+    ]);
     expect(image.repository).toBe(
       'registry.mgmt.yqb1.keroack.internal:18443/sites/portfolio-static',
     );
+    expect(image.platforms).toEqual(['linux/amd64', 'linux/arm64']);
     expect(image.build_paths.filter((path) => !exists(path))).toEqual([]);
     expect(exists(descriptor.bake_file)).toBe(true);
-    const { dockerfile } = JSON.parse(read(descriptor.bake_file)).target.static;
+    const { dockerfile, platforms } = JSON.parse(read(descriptor.bake_file))
+      .target.static;
+    expect(image.platforms).toEqual(platforms);
     expect(image.build_paths).toContain(dockerfile);
     expect(image.build_paths).not.toContain('.keroack/images.json');
     expect(image.build_paths).not.toContain(descriptor.bake_file);
+  });
+
+  test('listens on both IPv4 and IPv6 on port 8080', () => {
+    const serverConf = read('ci/nginx/server.conf');
+    expect(serverConf).toMatch(/^\s*listen 8080;\s*$/m);
+    expect(serverConf).toMatch(/^\s*listen \[::\]:8080;\s*$/m);
   });
 
   test("builds both Linux architectures from the recipe's static stage", () => {
@@ -83,14 +96,24 @@ describe.skipIf(!existsSync(join(root, '.git')))('the static image', () => {
     expect(text).not.toMatch(/secrets\./);
     expect(text).not.toMatch(/github\.token/);
 
-    const step = (action) =>
-      job.steps.find(({ uses }) => uses?.startsWith(`${action}@`));
-    expect(step('actions/checkout').with['persist-credentials']).toBe(false);
-    expect(step('actions/upload-artifact').with).toEqual({
-      path: '${{ steps.image.outputs.archive }}',
-      archive: false,
-      'retention-days': 1,
-      'if-no-files-found': 'error',
-    });
+    const steps = (action) =>
+      job.steps.filter(({ uses }) => uses?.startsWith(`${action}@`));
+    expect(steps('actions/checkout')[0].with['persist-credentials']).toBe(
+      false,
+    );
+    expect(steps('actions/upload-artifact').map((step) => step.with)).toEqual([
+      {
+        path: '${{ steps.image.outputs.archive }}',
+        archive: false,
+        'retention-days': 1,
+        'if-no-files-found': 'error',
+      },
+      {
+        path: '${{ steps.image.outputs.receipt }}',
+        archive: false,
+        'retention-days': 1,
+        'if-no-files-found': 'error',
+      },
+    ]);
   });
 });

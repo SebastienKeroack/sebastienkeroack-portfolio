@@ -253,6 +253,10 @@ def verify_files(root):
         name = "etc/nginx/" + installed
         require(record(name) == hashlib.sha256((configs / source).read_bytes()).hexdigest(),
                 f"/{name} differs from ci/nginx/{source}")
+    server_conf = observed("etc/nginx/server.conf").read_text(encoding="utf-8")
+    for directive in ("listen 8080;", "listen [::]:8080;"):
+        require(re.search(rf"^\s*{re.escape(directive)}\s*$", server_conf, re.MULTILINE),
+                f"expected dual-stack Nginx directive {directive!r} in /etc/nginx/server.conf")
     return evidence
 
 

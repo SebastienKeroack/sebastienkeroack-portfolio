@@ -28,12 +28,15 @@ It is accessible at [sebastienkeroack.com](https://sebastienkeroack.com).
 ## Verify a static image archive
 
 The static Bake target exports one OCI image index for `linux/amd64` and
-`linux/arm64`. The build workflow compares the index digest across two builds,
-including a rebuild without cache, and logs the digest before uploading
-`static.oci.tar` after checking both child manifest blobs in each export. To
-replay the producer step locally with synthetic archives and no real build, run
-`python3 -B -m unittest -v ci.test_build_image` with yq and the workflow's shell
-tools on `PATH`.
+`linux/arm64`. Routine runs perform one build (using explicit registry layer
+cache when configured), verify the full OCI archive closure (`oci-layout`,
+`index.json`, parent index, both child manifests, configs, and all layer
+blobs), write `images-receipt.json`, and upload both `static.oci.tar` and
+`images-receipt.json`. Dispatching the workflow with
+`verify_reproducibility=true` runs an additional uncached rebuild and requires
+matching index digests. To replay the producer step locally with synthetic
+archives and no real build, run `python3 -B -m unittest -v ci.test_build_image`
+with yq and the workflow's shell tools on `PATH`.
 
 On Linux, run as an unprivileged user with Python 3.11 or later, Skopeo with
 digest-preserving OCI copy support, and umoci with rootless unpack support on
