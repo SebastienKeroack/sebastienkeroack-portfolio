@@ -94,8 +94,11 @@ jobs:
               echo "error: $1 index digest or size mismatch" >&2
               return 1
             fi
-            members="$(jq -er --argjson platforms "$platforms" '
-              select(.schemaVersion == 2 and .mediaType == "application/vnd.oci.image.index.v1+json"
+            members="$(jq -ers --argjson platforms "$platforms" '
+              select(length == 1)
+              | .[]
+              | select(.schemaVersion == 2 and .mediaType == "application/vnd.oci.image.index.v1+json"
+                     and (.manifests | type == "array")
                      and all(.manifests[]; .mediaType == "application/vnd.oci.image.manifest.v1+json"
                              and (.digest | test("^sha256:[0-9a-f]{64}$")))
                      and ([.manifests[].platform | .os + "/" + .architecture] | sort) == $platforms)

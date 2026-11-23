@@ -94,6 +94,19 @@ class BuildImage(unittest.TestCase):
         self.assertEqual(files[parent], self.archive_members(other)[parent])
         self.assertEqual(files["index.json"], self.archive_members(other)["index.json"])
 
+    def change_parent(self, change):
+        files = self.archive_members(self.first)
+        parent = "blobs/sha256/" + self.digest.removeprefix("sha256:")
+        raw = change(files.pop(parent))
+        digest = hashlib.sha256(raw).hexdigest()
+        files["blobs/sha256/" + digest] = raw
+        layout = json.loads(files["index.json"])
+        layout["manifests"][0].update(digest="sha256:" + digest, size=len(raw))
+        files["index.json"] = json.dumps(layout).encode()
+        archive = tar_bytes(files)
+        self.first.write_bytes(archive)
+        self.rebuild.write_bytes(archive)
+
     def assert_refused(self, message):
         result = self.run_step()
         if self.output.exists():
@@ -126,21 +139,27 @@ class BuildImage(unittest.TestCase):
         self.assert_refused("static.oci.tar linux/amd64 manifest")
 
     def test_refuses_stale_size_for_an_otherwise_exact_manifest(self):
-        files = self.archive_members(self.first)
-        parent = "blobs/sha256/" + self.digest.removeprefix("sha256:")
-        index = json.loads(files.pop(parent))
-        child = next(member for member in index["manifests"] if member["platform"]["architecture"] == "arm64")
-        child["size"] += 1
-        raw = json.dumps(index).encode()
-        digest = hashlib.sha256(raw).hexdigest()
-        files["blobs/sha256/" + digest] = raw
-        layout = json.loads(files["index.json"])
-        layout["manifests"][0].update(digest="sha256:" + digest, size=len(raw))
-        files["index.json"] = json.dumps(layout).encode()
-        stale = tar_bytes(files)
-        self.first.write_bytes(stale)
-        self.rebuild.write_bytes(stale)
+        def stale_size(payload):
+            index = json.loads(payload)
+            child = next(member for member in index["manifests"] if member["platform"]["architecture"] == "arm64")
+            child["size"] += 1
+            return json.dumps(index).encode()
+
+        self.change_parent(stale_size)
         self.assert_refused("static.oci.tar linux/arm64 manifest")
+
+    def test_refuses_an_object_instead_of_a_parent_manifest_array(self):
+        def object_manifests(payload):
+            index = json.loads(payload)
+            index["manifests"] = {member["platform"]["architecture"]: member for member in index["manifests"]}
+            return json.dumps(index).encode()
+
+        self.change_parent(object_manifests)
+        self.assert_refused("static.oci.tar must hold one OCI image manifest per Bake platform")
+
+    def test_refuses_two_matching_json_values_in_one_parent_index_member(self):
+        self.change_parent(lambda payload: payload + b"\n" + payload)
+        self.assert_refused("static.oci.tar must hold one OCI image manifest per Bake platform")
 
     def test_refuses_a_manifest_split_across_duplicate_tar_entries(self):
         member = "blobs/sha256/" + self.manifests["linux/arm64"].removeprefix("sha256:")
