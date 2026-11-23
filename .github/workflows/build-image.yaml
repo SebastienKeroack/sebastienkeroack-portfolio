@@ -42,6 +42,11 @@ jobs:
         run: |
           # Native gap: Bake exports OCI archives but neither verifies full blob closure nor writes the delivery receipt.
           set -euo pipefail
+          auth_dir=""
+          cleanup() {
+            [[ -z "$auth_dir" ]] || rm -rf -- "$auth_dir"
+          }
+          trap cleanup EXIT
           descriptor=.keroack/images.json
           target="$(jq -er '.images | keys | if length == 1 then .[0] else error("declare one image") end' "$descriptor")"
           bake_file="$(jq -er .bake_file "$descriptor")"
@@ -53,30 +58,67 @@ jobs:
             exit 1
           fi
           directory="$RUNNER_TEMP/image"
-          mkdir -m 0700 -- "$directory"
           # The commit's time pins every timestamp the build writes. The runner, not the job's
           # user, owns the workspace, so Git trusts it for this one command.
           commit="$(git -c safe.directory="$GITHUB_WORKSPACE" rev-parse --verify 'HEAD^{commit}')"
           ref="${GITHUB_REF:-refs/heads/main}"
           epoch="$(git -c safe.directory="$GITHUB_WORKSPACE" log -1 --format=%ct HEAD)"
-          buildx=/usr/local/lib/docker/cli-plugins/docker-buildx
-          "$buildx" create --name portfolio --driver remote "$BUILDKIT_HOST" > /dev/null
-          buildkit_version="$("$buildx" inspect portfolio --bootstrap | sed -nE 's/^BuildKit version: +(.+)$/\1/p')"
-          if [[ ! "$buildkit_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ || "$buildkit_version" == *$'\n'* ]]; then
-            echo "error: unable to read remote BuildKit version" >&2
-            exit 1
+          cache_project="${KEROACK_LAYER_CACHE_PROJECT:-}"
+          cache_authfile="${KEROACK_LAYER_CACHE_AUTHFILE:-}"
+          cache_ca="${KEROACK_LAYER_CACHE_CA:-}"
+          if [[ "$ref" == refs/heads/main && "${ACT:-}" != true ]]; then
+            if [[ -z "$cache_project" || -z "$cache_authfile" || -z "$cache_ca" ]]; then
+              echo "error: main builds require KEROACK_LAYER_CACHE_PROJECT, KEROACK_LAYER_CACHE_AUTHFILE, and KEROACK_LAYER_CACHE_CA" >&2
+              exit 1
+            fi
           fi
           cache_args=()
-          if [[ -n "${KEROACK_LAYER_CACHE_PROJECT:-}" && -n "${GITHUB_REPOSITORY:-}" && "$ref" == refs/heads/main ]]; then
+          buildx_env=(-u DOCKER_AUTH_CONFIG -u SSLKEYLOGFILE -u KEROACK_LAYER_CACHE_AUTHFILE)
+          if [[ -n "$cache_project" || -n "$cache_authfile" || -n "$cache_ca" ]]; then
+            if [[ -z "$cache_project" || -z "$cache_authfile" || -z "$cache_ca" ]]; then
+              echo "error: KEROACK_LAYER_CACHE_PROJECT, KEROACK_LAYER_CACHE_AUTHFILE, and KEROACK_LAYER_CACHE_CA must be set together" >&2
+              exit 1
+            fi
+            repo_lower="${GITHUB_REPOSITORY:-}"
+            repo_lower="${repo_lower,,}"
+            owner="${repo_lower%%/*}"
+            if [[ ! "$repo_lower" =~ ^[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9._-]+$ || ${#owner} -gt 39 ||
+                  "${repo_lower#*/}" == . || "${repo_lower#*/}" == .. ]]; then
+              echo "error: GITHUB_REPOSITORY must be a canonical owner/repository identity" >&2
+              exit 1
+            fi
+            if [[ ! -f "$cache_authfile" || ! -r "$cache_authfile" ]]; then
+              echo "error: KEROACK_LAYER_CACHE_AUTHFILE must name a readable regular file" >&2
+              exit 1
+            fi
+            if [[ ! -f "$cache_ca" || ! -r "$cache_ca" ]]; then
+              echo "error: KEROACK_LAYER_CACHE_CA must name a readable regular file" >&2
+              exit 1
+            fi
+            auth_dir="$(mktemp -d "$RUNNER_TEMP/.keroack-layer-cache.XXXXXX")"
+            chmod 700 -- "$auth_dir"
+            (umask 077 && install -m 0600 -- "$cache_authfile" "$auth_dir/config.json")
+            buildx_env+=("DOCKER_CONFIG=$auth_dir" "SSL_CERT_FILE=$cache_ca" "KEROACK_LAYER_CACHE_CA=$cache_ca")
             cache_hash="$(printf '%s' "$target:refs/heads/main" | sha256sum)"
-            cache_ref="${KEROACK_LAYER_CACHE_PROJECT}/${GITHUB_REPOSITORY,,}/${target}:cache-v2-${cache_hash%% *}"
+            cache_ref="${cache_project}/${repo_lower}/${target}:cache-v2-${cache_hash%% *}"
             cache_args=(
               --set "$target.cache-from=type=registry,ref=$cache_ref"
               --set "$target.cache-to=type=registry,ref=$cache_ref,mode=max"
             )
           fi
+          mkdir -m 0700 -- "$directory"
+          buildx=/usr/local/lib/docker/cli-plugins/docker-buildx
+          run_buildx() {
+            env "${buildx_env[@]}" "$buildx" "$@"
+          }
+          run_buildx create --name portfolio --driver remote "$BUILDKIT_HOST" > /dev/null
+          buildkit_version="$(run_buildx inspect portfolio --bootstrap | sed -nE 's/^BuildKit version: +(.+)$/\1/p')"
+          if [[ ! "$buildkit_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ || "$buildkit_version" == *$'\n'* ]]; then
+            echo "error: unable to read remote BuildKit version" >&2
+            exit 1
+          fi
           build() {
-            "$buildx" bake --builder portfolio --file "$bake_file" \
+            run_buildx bake --builder portfolio --file "$bake_file" \
               --allow "fs.write=$directory" --provenance=false --sbom=false \
               --set "$target.args.SOURCE_DATE_EPOCH=$epoch" \
               --set "$target.output=type=oci,dest=$directory/$1,rewrite-timestamp=true" "${@:2}" "$target"
@@ -98,6 +140,39 @@ jobs:
             hash="$(sha256sum < "$output")" || return
             bytes="$(wc -c < "$output")" || return
             [[ "${hash%% *}" == "${digest#sha256:}" && "$bytes" == "$size" ]]
+          }
+          verify_tar_allowlist() {
+            local archive="$1" label="$2" listing line mode size date time entry_path bytes listed=0
+            local -A seen=()
+            listing="$(LC_ALL=C tar --numeric-owner -tvf "$archive")" || return
+            while IFS= read -r line; do
+              [[ -n "$line" ]] || continue
+              read -r mode _ size date time entry_path <<< "$line"
+              case "${mode:0:1}" in
+                -) [[ "$entry_path" =~ ^(oci-layout|index\.json|blobs/sha256/[0-9a-f]{64})$ ]] ;;
+                d) [[ "$entry_path" == blobs/ || "$entry_path" == blobs/sha256/ ]] ;;
+                *) false ;;
+              esac || {
+                echo "error: $label contains disallowed tar entry $entry_path" >&2
+                return 1
+              }
+              if [[ ! "$size" =~ ^[0-9]{1,15}$ || ! "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ || ! "$time" =~ ^[0-9]{2}:[0-9]{2}$ ]]; then
+                echo "error: $label contains malformed tar entry $entry_path" >&2
+                return 1
+              fi
+              entry_path="${entry_path%/}"
+              if [[ -v "seen[$entry_path]" ]]; then
+                echo "error: $label repeats tar entry $entry_path" >&2
+                return 1
+              fi
+              seen["$entry_path"]=1
+              listed=$((listed + 10#$size < 10 ** 18 ? listed + 10#$size : 10 ** 18))
+            done <<< "$listing"
+            bytes="$(stat -c %s -- "$archive")"
+            if ((listed > bytes)); then
+              echo "error: $label tar entries list $listed bytes, exceeding archive size $bytes" >&2
+              return 1
+            fi
           }
           verify_archive() {
             local archive="$directory/$1" names root digest size members children platform child_digest child_size
@@ -191,9 +266,12 @@ jobs:
               IFS=$'\t' read -r config_digest config_size layer_count <<< "$config_meta"
               if ! verify_blob "$archive" "$names" "$config_digest" "$config_size" "$config" ||
                  ! jq -ers --arg platform "$platform" --argjson layer_count "$layer_count" '
+                   def runnable: type == "object" and .os == "linux"
+                     and ((.architecture == "amd64" and (has("variant") | not))
+                          or (.architecture == "arm64" and ((has("variant") | not) or .variant == "v8")));
                    select(length == 1)
                    | .[0]
-                   | select(type == "object"
+                   | select(runnable
                           and ((.os + "/" + .architecture) == $platform)
                           and (.rootfs.diff_ids | type == "array" and length == $layer_count))
                  ' "$config" > /dev/null; then
@@ -210,6 +288,7 @@ jobs:
               children="$(jq -c --arg platform "$platform" --arg digest "$child_digest" \
                 '. + {($platform): $digest}' <<< "$children")"
             done <<< "$members"
+            verify_tar_allowlist "$archive" "$1" || return 1
             printf '%s\t%s\n' "$digest" "$children"
           }
           build "$target.oci.tar" "${cache_args[@]}"

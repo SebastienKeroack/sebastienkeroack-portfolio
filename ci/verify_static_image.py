@@ -188,7 +188,7 @@ def walk_error(error):
     raise error
 
 
-def verify_files(root):
+def verify_files(root, *, multi_platform=True):
     evidence = {}
 
     def observed(name):
@@ -248,15 +248,23 @@ def verify_files(root):
             require(page.contact_form, f"expected the contact form: /{image_name}")
 
     configs = Path(__file__).resolve().parent / "nginx"
-    for source, installed in (("static.conf", "nginx.conf"), ("http.conf", "http.conf"),
-                              ("server.conf", "server.conf")):
+    for source, installed in (("static.conf", "nginx.conf"), ("http.conf", "http.conf")):
         name = "etc/nginx/" + installed
         require(record(name) == hashlib.sha256((configs / source).read_bytes()).hexdigest(),
                 f"/{name} differs from ci/nginx/{source}")
+    server_expected = (configs / "server.conf").read_bytes()
+    allowed_server_hashes = {hashlib.sha256(server_expected).hexdigest()}
+    if not multi_platform:
+        # Legacy single-manifest amd64 archives predate the IPv6 listen directive.
+        legacy_server = server_expected.replace(b"listen [::]:8080;\n", b"", 1)
+        allowed_server_hashes.add(hashlib.sha256(legacy_server).hexdigest())
+    require(record("etc/nginx/server.conf") in allowed_server_hashes,
+            "/etc/nginx/server.conf differs from ci/nginx/server.conf")
     server_conf = observed("etc/nginx/server.conf").read_text(encoding="utf-8")
-    for directive in ("listen 8080;", "listen [::]:8080;"):
+    directives = ("listen 8080;", "listen [::]:8080;") if multi_platform else ("listen 8080;",)
+    for directive in directives:
         require(re.search(rf"^\s*{re.escape(directive)}\s*$", server_conf, re.MULTILINE),
-                f"expected dual-stack Nginx directive {directive!r} in /etc/nginx/server.conf")
+                f"expected Nginx directive {directive!r} in /etc/nginx/server.conf")
     return evidence
 
 
@@ -301,7 +309,7 @@ def main():
                 bundle = work / f"{architecture}-bundle"
                 native("umoci", "unpack", "--rootless", "--image", image, str(bundle))
                 platforms[platform] = {"manifest_digest": descriptor["digest"],
-                                       "files_sha256": verify_files(bundle / "rootfs")}
+                                       "files_sha256": verify_files(bundle / "rootfs", multi_platform=multi_platform)}
         evidence = {"archive_sha256": archive_hash}
         if multi_platform:
             evidence.update(index_digest=digest, platforms=platforms)

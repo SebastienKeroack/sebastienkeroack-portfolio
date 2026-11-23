@@ -17,6 +17,7 @@ BUILDX = "/usr/local/lib/docker/cli-plugins/docker-buildx"
 BUILD_FIXTURE = """#!/usr/bin/env bash
 set -eu
 if [[ $1 == create ]]; then
+  printf 'create|%s|%s|%s|%s\\n' "${DOCKER_CONFIG:-}" "${SSL_CERT_FILE:-}" "${DOCKER_AUTH_CONFIG-unset}" "${KEROACK_LAYER_CACHE_AUTHFILE-unset}" >> "$FIXTURE_ENV_LOG"
   exit 0
 fi
 if [[ $1 == inspect ]]; then
@@ -26,6 +27,19 @@ if [[ $1 == inspect ]]; then
 fi
 [[ $1 == bake ]]
 printf '%s\\n' "$*" >> "$FIXTURE_BAKE_LOG"
+config_mode=""
+dir_mode=""
+config_body=""
+if [[ -n "${DOCKER_CONFIG:-}" && -d "$DOCKER_CONFIG" ]]; then
+  dir_mode="$(stat -c '%a' "$DOCKER_CONFIG")"
+  if [[ -f "$DOCKER_CONFIG/config.json" ]]; then
+    config_mode="$(stat -c '%a' "$DOCKER_CONFIG/config.json")"
+    config_body="$(cat "$DOCKER_CONFIG/config.json")"
+  fi
+fi
+printf 'bake|%s|%s|%s|%s|%s|%s|%s\\n' \
+  "${DOCKER_CONFIG:-}" "$dir_mode" "$config_mode" "${SSL_CERT_FILE:-}" \
+  "${DOCKER_AUTH_CONFIG-unset}" "${KEROACK_LAYER_CACHE_AUTHFILE-unset}" "$config_body" >> "$FIXTURE_ENV_LOG"
 archive="$FIXTURE_FIRST"
 for arg in "$@"; do
   case "$arg" in
@@ -54,6 +68,12 @@ class BuildImage(unittest.TestCase):
         self.rebuild = self.directory / "rebuild.tar"
         self.output = self.directory / "github-output"
         self.bake_log = self.directory / "bake.log"
+        self.env_log = self.directory / "env.log"
+        self.cache_auth = self.directory / "harbor-auth.json"
+        self.cache_auth_body = '{"auths":{"registry.mgmt.yqb1.keroack.internal:18443":{"auth":"Zml4dHVyZQ=="}}}'
+        self.cache_auth.write_text(self.cache_auth_body)
+        self.cache_ca = self.directory / "harbor-ca.crt"
+        self.cache_ca.write_text("-----BEGIN CERTIFICATE-----\nFIXTURE\n-----END CERTIFICATE-----\n")
         self.digest, self.manifests = index_fixture(self.first)
         self.rebuild.write_bytes(self.first.read_bytes())
         buildx = self.directory / "buildx"
@@ -62,7 +82,7 @@ class BuildImage(unittest.TestCase):
         self.assertIn(BUILDX, self.step)
         self.script = self.step.replace(BUILDX, shlex.quote(str(buildx)))
 
-    def run_step(self, *, verify_reproducibility=False, extra_env=None):
+    def run_step(self, *, verify_reproducibility=False, extra_env=None, drop_env=()):
         env = {
             **os.environ,
             "RUNNER_TEMP": str(self.directory),
@@ -71,11 +91,18 @@ class BuildImage(unittest.TestCase):
             "GITHUB_REF": "refs/heads/main",
             "GITHUB_REPOSITORY": "SebastienKeroack/sebastienkeroack-portfolio",
             "BUILDKIT_HOST": "fixture",
+            "KEROACK_LAYER_CACHE_PROJECT": "registry.mgmt.yqb1.keroack.internal:18443/sites-build-cache",
+            "KEROACK_LAYER_CACHE_AUTHFILE": str(self.cache_auth),
+            "KEROACK_LAYER_CACHE_CA": str(self.cache_ca),
+            "DOCKER_AUTH_CONFIG": '{"auths":{"ambient.invalid":{"auth":"bad"}}}',
             "FIXTURE_FIRST": str(self.first),
             "FIXTURE_REBUILD": str(self.rebuild),
             "FIXTURE_BAKE_LOG": str(self.bake_log),
+            "FIXTURE_ENV_LOG": str(self.env_log),
             "VERIFY_REPRODUCIBILITY": "true" if verify_reproducibility else "false",
         }
+        for key in drop_env:
+            env.pop(key, None)
         if extra_env:
             env.update(extra_env)
         return subprocess.run(
@@ -90,6 +117,39 @@ class BuildImage(unittest.TestCase):
         files = self.archive_members(path)
         member = "blobs/sha256/" + self.manifests[platform].removeprefix("sha256:")
         return json.loads(files[member])
+
+    def rewrite_child_config(self, archive, platform, mutate):
+        files = self.archive_members(archive)
+        manifest_digest = self.manifests[platform]
+        manifest_member = "blobs/sha256/" + manifest_digest.removeprefix("sha256:")
+        manifest = json.loads(files.pop(manifest_member))
+        config_digest = manifest["config"]["digest"]
+        config_member = "blobs/sha256/" + config_digest.removeprefix("sha256:")
+        config = json.loads(files.pop(config_member))
+        mutate(config)
+        new_config_bytes = json.dumps(config).encode()
+        new_config_digest = "sha256:" + hashlib.sha256(new_config_bytes).hexdigest()
+        files["blobs/sha256/" + new_config_digest[7:]] = new_config_bytes
+        manifest["config"]["digest"] = new_config_digest
+        manifest["config"]["size"] = len(new_config_bytes)
+        new_manifest_bytes = json.dumps(manifest).encode()
+        new_manifest_digest = "sha256:" + hashlib.sha256(new_manifest_bytes).hexdigest()
+        files["blobs/sha256/" + new_manifest_digest[7:]] = new_manifest_bytes
+        parent_member = "blobs/sha256/" + self.digest.removeprefix("sha256:")
+        parent = json.loads(files.pop(parent_member))
+        for member in parent["manifests"]:
+            if member["digest"] == manifest_digest:
+                member["digest"] = new_manifest_digest
+                member["size"] = len(new_manifest_bytes)
+        new_parent_bytes = json.dumps(parent).encode()
+        new_parent_digest = "sha256:" + hashlib.sha256(new_parent_bytes).hexdigest()
+        files["blobs/sha256/" + new_parent_digest[7:]] = new_parent_bytes
+        layout = json.loads(files["index.json"])
+        layout["manifests"][0].update(digest=new_parent_digest, size=len(new_parent_bytes))
+        files["index.json"] = json.dumps(layout).encode()
+        archive.write_bytes(tar_bytes(files))
+        self.digest = new_parent_digest
+        self.manifests[platform] = new_manifest_digest
 
     def replace_tar_member(self, path, name, replacements):
         files = self.archive_members(path)
@@ -134,8 +194,8 @@ class BuildImage(unittest.TestCase):
         self.first.write_bytes(archive)
         self.rebuild.write_bytes(archive)
 
-    def assert_refused(self, message, *, verify_reproducibility=False):
-        result = self.run_step(verify_reproducibility=verify_reproducibility)
+    def assert_refused(self, message, *, verify_reproducibility=False, extra_env=None, drop_env=()):
+        result = self.run_step(verify_reproducibility=verify_reproducibility, extra_env=extra_env, drop_env=drop_env)
         if self.output.exists():
             self.fail(f"workflow handed off a rejected export: {self.output.read_text().strip()}")
         self.assertEqual(result.returncode, 1, (result.stdout, result.stderr))
@@ -180,10 +240,8 @@ class BuildImage(unittest.TestCase):
             },
         })
 
-    def test_single_build_uses_explicit_harbor_layer_cache_when_configured(self):
-        result = self.run_step(extra_env={
-            "KEROACK_LAYER_CACHE_PROJECT": "registry.mgmt.yqb1.keroack.internal:18443/sites-build-cache",
-        })
+    def test_single_build_wires_scoped_harbor_cache_auth_and_cleans_up(self):
+        result = self.run_step()
         self.assertEqual(result.returncode, 0, result.stderr)
         bake_calls = self.bake_log.read_text().splitlines()
         self.assertEqual(len(bake_calls), 1, bake_calls)
@@ -195,6 +253,35 @@ class BuildImage(unittest.TestCase):
         self.assertIn(f"static.cache-from=type=registry,ref={expected_ref}", bake_calls[0])
         self.assertIn(f"static.cache-to=type=registry,ref={expected_ref},mode=max", bake_calls[0])
 
+        env_lines = self.env_log.read_text().splitlines()
+        create_fields = env_lines[0].split("|")
+        bake_fields = env_lines[1].split("|")
+        self.assertEqual(create_fields[0], "create")
+        self.assertEqual(bake_fields[0], "bake")
+        docker_config = bake_fields[1]
+        self.assertTrue(docker_config.startswith(str(self.directory) + "/"), docker_config)
+        self.assertEqual(create_fields[1], docker_config)
+        self.assertEqual(bake_fields[2], "700")
+        self.assertEqual(bake_fields[3], "600")
+        self.assertEqual(bake_fields[4], str(self.cache_ca))
+        self.assertEqual(bake_fields[5], "unset")
+        self.assertEqual(bake_fields[6], "unset")
+        self.assertEqual(bake_fields[7], self.cache_auth_body)
+        self.assertFalse(Path(docker_config).exists(), "private DOCKER_CONFIG directory must be removed on exit")
+
+    def test_refuses_main_build_without_layer_cache_projection(self):
+        for missing in ("KEROACK_LAYER_CACHE_PROJECT", "KEROACK_LAYER_CACHE_AUTHFILE", "KEROACK_LAYER_CACHE_CA"):
+            with self.subTest(missing=missing):
+                self.assert_refused("require KEROACK_LAYER_CACHE_PROJECT", drop_env=(missing,))
+                self.assertFalse(self.bake_log.exists())
+
+    def test_refuses_unreadable_layer_cache_authfile(self):
+        self.assert_refused(
+            "KEROACK_LAYER_CACHE_AUTHFILE must name a readable",
+            extra_env={"KEROACK_LAYER_CACHE_AUTHFILE": str(self.directory / "missing-auth.json")},
+        )
+        self.assertFalse(self.bake_log.exists())
+
     def test_reproducibility_mode_runs_uncached_rebuild_and_hands_off_matching_exports(self):
         result = self.run_step(verify_reproducibility=True)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -202,6 +289,25 @@ class BuildImage(unittest.TestCase):
         self.assertEqual(len(bake_calls), 2, bake_calls)
         self.assertIn("--no-cache", bake_calls[1])
         self.assertFalse((self.directory / "image/again.oci.tar").exists())
+
+    def test_accepts_arm64_config_with_v8_variant(self):
+        self.rewrite_child_config(self.first, "linux/arm64", lambda cfg: cfg.update(variant="v8"))
+        result = self.run_step()
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_refuses_invalid_arm64_config_variant(self):
+        self.rewrite_child_config(self.first, "linux/arm64", lambda cfg: cfg.update(variant="v7"))
+        self.assert_refused("static.oci.tar linux/arm64 config")
+
+    def test_refuses_unexpected_amd64_config_variant(self):
+        self.rewrite_child_config(self.first, "linux/amd64", lambda cfg: cfg.update(variant="v3"))
+        self.assert_refused("static.oci.tar linux/amd64 config")
+
+    def test_refuses_stray_top_level_tar_entry(self):
+        files = self.archive_members(self.first)
+        files["README"] = b"unexpected top-level member\n"
+        self.first.write_bytes(tar_bytes(files))
+        self.assert_refused("disallowed tar entry README")
 
     def test_refuses_rebuild_with_a_different_valid_index(self):
         digest, _ = index_fixture(self.rebuild, platforms=("amd64", "arm64"))
