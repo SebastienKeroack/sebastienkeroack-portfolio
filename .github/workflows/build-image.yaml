@@ -79,6 +79,11 @@ jobs:
               echo "error: KEROACK_LAYER_CACHE_PROJECT, KEROACK_LAYER_CACHE_AUTHFILE, and KEROACK_LAYER_CACHE_CA must be set together" >&2
               exit 1
             fi
+            if [[ "${ACT:-}" == true || "$ref" != refs/heads/main ||
+                  ("${GITHUB_EVENT_NAME:-}" != push && "${GITHUB_EVENT_NAME:-}" != workflow_dispatch) ]]; then
+              echo "error: explicit layer caching requires non-act refs/heads/main push or workflow_dispatch" >&2
+              exit 1
+            fi
             repo_lower="${GITHUB_REPOSITORY:-}"
             repo_lower="${repo_lower,,}"
             owner="${repo_lower%%/*}"
@@ -179,6 +184,19 @@ jobs:
             local oci_layout="$directory/oci-layout.json" layout="$directory/index.json" index="$directory/parent.json"
             local manifest="$directory/manifest.json" config="$directory/config.json" layer="$directory/layer.blob"
             local config_meta config_digest config_size layer_count layers layer_digest layer_size
+            local exact_oci_jq='
+              def fold: ascii_downcase | gsub("\u017f"; "s") | gsub("\u212a"; "k");
+              def named: if type == "object" then to_entries[] | .key, (select(.key | IN("annotations", "Labels") | not)
+                  | .value | named)
+                elif type == "array" then .[] | named else empty end;
+              def exact_oci_fields:
+                ("schemaVersion manifests mediaType artifactType config layers subject annotations digest size urls data platform"
+                  + " architecture os os.version os.features variant created author rootfs history type diff_ids created_by"
+                  + " comment empty_layer User ExposedPorts Env Entrypoint Cmd Volumes WorkingDir Labels StopSignal ArgsEscaped"
+                  | split(" ")) as $fields
+                | all(named; IN($fields[]) or (fold | IN($fields[] | fold) | not));
+            '
+            verify_tar_allowlist "$archive" "$1" || return 1
             names="$(LC_ALL=C tar -tf "$archive")" || return
             if ! read_member "$archive" "$names" oci-layout "$oci_layout" ||
                ! jq -ers 'select(length == 1) | .[0] | select(type == "object" and .imageLayoutVersion == "1.0.0")' \
@@ -190,11 +208,11 @@ jobs:
               echo "error: $1 must hold one regular index.json" >&2
               return 1
             fi
-            root="$(jq -ers '
+            root="$(jq -ers "$exact_oci_jq"'
               def count: type == "number" and . == floor and . >= 0;
               select(length == 1)
               | .[]
-              | select(.schemaVersion == 2 and (.manifests | type == "array" and length == 1))
+              | select(exact_oci_fields and .schemaVersion == 2 and (.manifests | type == "array" and length == 1))
               | .manifests[]
               | select(.mediaType == "application/vnd.oci.image.index.v1+json"
                        and (.digest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
@@ -209,7 +227,7 @@ jobs:
               echo "error: $1 index digest or size mismatch" >&2
               return 1
             fi
-            members="$(jq -ers --argjson platforms "$platforms" '
+            members="$(jq -ers --argjson platforms "$platforms" "$exact_oci_jq"'
               def count: type == "number" and . == floor and . >= 0;
               def runnable: type == "object" and .os == "linux"
                 and (keys - ["architecture", "os", "variant"] == [])
@@ -217,7 +235,7 @@ jobs:
                      or (.architecture == "arm64" and ((has("variant") | not) or .variant == "v8")));
               select(length == 1)
               | .[]
-              | select(.schemaVersion == 2 and .mediaType == "application/vnd.oci.image.index.v1+json"
+              | select(exact_oci_fields and .schemaVersion == 2 and .mediaType == "application/vnd.oci.image.index.v1+json"
                      and ((has("artifactType") or has("subject") or has("config") or has("layers")) | not)
                      and (.manifests | type == "array" and length == ($platforms | length))
                      and all(.manifests[]; .mediaType == "application/vnd.oci.image.manifest.v1+json"
@@ -239,7 +257,7 @@ jobs:
                 echo "error: $1 $platform manifest must be one regular archive member matching its digest and size" >&2
                 return 1
               fi
-              config_meta="$(jq -ers '
+              config_meta="$(jq -ers "$exact_oci_jq"'
                 def count: type == "number" and . == floor and . >= 0;
                 def described: type == "object"
                   and (.digest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
@@ -252,7 +270,7 @@ jobs:
                 );
                 select(length == 1)
                 | .[0]
-                | select(.schemaVersion == 2
+                | select(exact_oci_fields and .schemaVersion == 2
                        and .mediaType == "application/vnd.oci.image.manifest.v1+json"
                        and ((has("artifactType") or has("subject") or has("manifests")) | not)
                        and (.config | described and .mediaType == "application/vnd.oci.image.config.v1+json")
@@ -265,13 +283,13 @@ jobs:
               }
               IFS=$'\t' read -r config_digest config_size layer_count <<< "$config_meta"
               if ! verify_blob "$archive" "$names" "$config_digest" "$config_size" "$config" ||
-                 ! jq -ers --arg platform "$platform" --argjson layer_count "$layer_count" '
+                 ! jq -ers --arg platform "$platform" --argjson layer_count "$layer_count" "$exact_oci_jq"'
                    def runnable: type == "object" and .os == "linux"
                      and ((.architecture == "amd64" and (has("variant") | not))
                           or (.architecture == "arm64" and ((has("variant") | not) or .variant == "v8")));
                    select(length == 1)
                    | .[0]
-                   | select(runnable
+                   | select(exact_oci_fields and runnable
                           and ((.os + "/" + .architecture) == $platform)
                           and (.rootfs.diff_ids | type == "array" and length == $layer_count))
                  ' "$config" > /dev/null; then
@@ -288,7 +306,6 @@ jobs:
               children="$(jq -c --arg platform "$platform" --arg digest "$child_digest" \
                 '. + {($platform): $digest}' <<< "$children")"
             done <<< "$members"
-            verify_tar_allowlist "$archive" "$1" || return 1
             printf '%s\t%s\n' "$digest" "$children"
           }
           build "$target.oci.tar" "${cache_args[@]}"

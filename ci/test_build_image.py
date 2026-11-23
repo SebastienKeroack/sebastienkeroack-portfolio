@@ -89,6 +89,7 @@ class BuildImage(unittest.TestCase):
             "GITHUB_OUTPUT": str(self.output),
             "GITHUB_WORKSPACE": str(ROOT),
             "GITHUB_REF": "refs/heads/main",
+            "GITHUB_EVENT_NAME": "push",
             "GITHUB_REPOSITORY": "SebastienKeroack/sebastienkeroack-portfolio",
             "BUILDKIT_HOST": "fixture",
             "KEROACK_LAYER_CACHE_PROJECT": "registry.mgmt.yqb1.keroack.internal:18443/sites-build-cache",
@@ -282,6 +283,20 @@ class BuildImage(unittest.TestCase):
         )
         self.assertFalse(self.bake_log.exists())
 
+    def test_refuses_layer_cache_outside_non_act_main_push_or_dispatch(self):
+        cases = (
+            ("non-main ref", {"GITHUB_REF": "refs/heads/feature"}),
+            ("act run", {"ACT": "true"}),
+            ("pull_request event", {"GITHUB_EVENT_NAME": "pull_request"}),
+        )
+        for label, extra in cases:
+            with self.subTest(case=label):
+                self.assert_refused(
+                    "explicit layer caching requires non-act refs/heads/main push or workflow_dispatch",
+                    extra_env=extra,
+                )
+                self.assertFalse(self.bake_log.exists())
+
     def test_reproducibility_mode_runs_uncached_rebuild_and_hands_off_matching_exports(self):
         result = self.run_step(verify_reproducibility=True)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -303,11 +318,17 @@ class BuildImage(unittest.TestCase):
         self.rewrite_child_config(self.first, "linux/amd64", lambda cfg: cfg.update(variant="v3"))
         self.assert_refused("static.oci.tar linux/amd64 config")
 
-    def test_refuses_stray_top_level_tar_entry(self):
+    def test_refuses_noncanonical_oci_field_casing_in_child_config(self):
+        self.rewrite_child_config(self.first, "linux/arm64", lambda cfg: cfg.update(Variant="v7"))
+        self.assert_refused("static.oci.tar linux/arm64 config")
+
+    def test_refuses_stray_top_level_tar_entry_before_extraction(self):
         files = self.archive_members(self.first)
         files["README"] = b"unexpected top-level member\n"
         self.first.write_bytes(tar_bytes(files))
         self.assert_refused("disallowed tar entry README")
+        self.assertFalse((self.directory / "image/oci-layout.json").exists())
+        self.assertFalse((self.directory / "image/index.json").exists())
 
     def test_refuses_rebuild_with_a_different_valid_index(self):
         digest, _ = index_fixture(self.rebuild, platforms=("amd64", "arm64"))
@@ -365,7 +386,7 @@ class BuildImage(unittest.TestCase):
         layer_digest = self.child_manifest(self.first, "linux/arm64")["layers"][0]["digest"]
         member = "blobs/sha256/" + layer_digest.removeprefix("sha256:")
         self.replace_tar_member(self.first, member, lambda payload: ((member, b"Z", payload),))
-        self.assert_refused("static.oci.tar linux/arm64 layer")
+        self.assert_refused(f"disallowed tar entry {member}")
 
     def test_refuses_missing_oci_layout(self):
         files = self.archive_members(self.first)
@@ -402,21 +423,21 @@ class BuildImage(unittest.TestCase):
             (member, tarfile.REGTYPE, payload[:1]),
             (member, tarfile.REGTYPE, payload[1:]),
         ))
-        self.assert_refused("static.oci.tar linux/arm64 manifest")
+        self.assert_refused(f"repeats tar entry {member}")
 
     def test_refuses_layout_index_split_across_duplicate_members(self):
         self.replace_tar_member(self.first, "index.json", lambda payload: (
             ("index.json", tarfile.REGTYPE, payload[:1]),
             ("index.json", tarfile.REGTYPE, payload[1:]),
         ))
-        self.assert_refused("static.oci.tar must hold one regular index.json")
+        self.assert_refused("repeats tar entry index.json")
 
     def test_refuses_duplicate_layout_index_under_dot_prefix_alias(self):
         self.replace_tar_member(self.first, "index.json", lambda payload: (
             ("index.json", tarfile.REGTYPE, payload),
             ("./index.json", tarfile.REGTYPE, payload),
         ))
-        self.assert_refused("static.oci.tar must hold one regular index.json")
+        self.assert_refused("disallowed tar entry ./index.json")
 
     def test_refuses_two_json_values_in_one_layout_index_member(self):
         self.replace_tar_member(self.rebuild, "index.json", lambda payload: (
@@ -436,9 +457,9 @@ class BuildImage(unittest.TestCase):
     def test_refuses_a_single_nonregular_layout_index_member_with_intact_bytes(self):
         # GNU tar streams an unknown type's bytes as though it were a regular file.
         self.replace_tar_member(self.first, "index.json", lambda payload: (("index.json", b"Z", payload),))
-        self.assert_refused("static.oci.tar must hold one regular index.json")
+        self.assert_refused("disallowed tar entry index.json")
 
     def test_refuses_a_single_nonregular_child_member_with_intact_bytes(self):
         member = "blobs/sha256/" + self.manifests["linux/arm64"].removeprefix("sha256:")
         self.replace_tar_member(self.first, member, lambda payload: ((member, b"Z", payload),))
-        self.assert_refused("static.oci.tar linux/arm64 manifest")
+        self.assert_refused(f"disallowed tar entry {member}")
