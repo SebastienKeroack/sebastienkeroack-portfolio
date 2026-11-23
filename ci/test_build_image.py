@@ -85,6 +85,7 @@ class BuildImage(unittest.TestCase):
     def run_step(self, *, verify_reproducibility=False, extra_env=None, drop_env=()):
         env = {
             **os.environ,
+            "ACT": "",
             "RUNNER_TEMP": str(self.directory),
             "GITHUB_OUTPUT": str(self.output),
             "GITHUB_WORKSPACE": str(ROOT),
@@ -285,16 +286,34 @@ class BuildImage(unittest.TestCase):
 
     def test_refuses_layer_cache_outside_non_act_main_push_or_dispatch(self):
         cases = (
-            ("non-main ref", {"GITHUB_REF": "refs/heads/feature"}),
-            ("act run", {"ACT": "true"}),
-            ("pull_request event", {"GITHUB_EVENT_NAME": "pull_request"}),
+            ("non-main ref", {"GITHUB_REF": "refs/heads/feature"}, ()),
+            ("empty ref", {"GITHUB_REF": ""}, ()),
+            ("unset ref", None, ("GITHUB_REF",)),
+            ("act run", {"ACT": "true"}, ()),
+            ("pull_request event", {"GITHUB_EVENT_NAME": "pull_request"}, ()),
         )
-        for label, extra in cases:
+        for label, extra, drop in cases:
             with self.subTest(case=label):
                 self.assert_refused(
                     "explicit layer caching requires non-act refs/heads/main push or workflow_dispatch",
                     extra_env=extra,
+                    drop_env=drop,
                 )
+                self.assertFalse(self.bake_log.exists())
+
+    def test_refuses_missing_or_empty_github_ref_without_layer_cache(self):
+        cache_vars = (
+            "KEROACK_LAYER_CACHE_PROJECT",
+            "KEROACK_LAYER_CACHE_AUTHFILE",
+            "KEROACK_LAYER_CACHE_CA",
+        )
+        cases = (
+            ("empty ref", {"GITHUB_REF": ""}, cache_vars),
+            ("unset ref", None, (*cache_vars, "GITHUB_REF")),
+        )
+        for label, extra, drop in cases:
+            with self.subTest(case=label):
+                self.assert_refused("GITHUB_REF must be set", extra_env=extra, drop_env=drop)
                 self.assertFalse(self.bake_log.exists())
 
     def test_reproducibility_mode_runs_uncached_rebuild_and_hands_off_matching_exports(self):

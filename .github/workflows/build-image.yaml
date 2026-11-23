@@ -61,7 +61,7 @@ jobs:
           # The commit's time pins every timestamp the build writes. The runner, not the job's
           # user, owns the workspace, so Git trusts it for this one command.
           commit="$(git -c safe.directory="$GITHUB_WORKSPACE" rev-parse --verify 'HEAD^{commit}')"
-          ref="${GITHUB_REF:-refs/heads/main}"
+          ref="${GITHUB_REF:-}"
           epoch="$(git -c safe.directory="$GITHUB_WORKSPACE" log -1 --format=%ct HEAD)"
           cache_project="${KEROACK_LAYER_CACHE_PROJECT:-}"
           cache_authfile="${KEROACK_LAYER_CACHE_AUTHFILE:-}"
@@ -110,6 +110,10 @@ jobs:
               --set "$target.cache-from=type=registry,ref=$cache_ref"
               --set "$target.cache-to=type=registry,ref=$cache_ref,mode=max"
             )
+          fi
+          if [[ -z "$ref" ]]; then
+            echo "error: GITHUB_REF must be set" >&2
+            exit 1
           fi
           mkdir -m 0700 -- "$directory"
           buildx=/usr/local/lib/docker/cli-plugins/docker-buildx
