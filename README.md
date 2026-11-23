@@ -30,7 +30,10 @@ It is accessible at [sebastienkeroack.com](https://sebastienkeroack.com).
 The static Bake target exports one OCI image index for `linux/amd64` and
 `linux/arm64`. The build workflow compares the index digest across two builds,
 including a rebuild without cache, and logs the digest before uploading
-`static.oci.tar`.
+`static.oci.tar` after checking both child manifest blobs in each export. To
+replay the producer step locally with synthetic archives and no real build, run
+`python3 -B -m unittest -v ci.test_build_image` with yq and the workflow's shell
+tools on `PATH`.
 
 On Linux, run as an unprivileged user with Python 3.11 or later, Skopeo with
 digest-preserving OCI copy support, and umoci with rootless unpack support on

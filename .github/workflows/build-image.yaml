@@ -33,7 +33,7 @@ jobs:
         id: image
         shell: bash
         run: |
-          # Native gap: Bake builds and exports the image but compares no second build's digest.
+          # Native gap: Bake exports images but does not verify or compare two archives.
           set -euo pipefail
           descriptor=.keroack/images.json
           target="$(jq -er '.images | keys | if length == 1 then .[0] else error("declare one image") end' "$descriptor")"
@@ -52,8 +52,18 @@ jobs:
               --set "$target.args.SOURCE_DATE_EPOCH=$epoch" \
               --set "$target.output=type=oci,dest=$directory/$1,rewrite-timestamp=true" "${@:2}" "$target"
           }
+          verify_blob() {
+            local archive="$1" digest="$2" size="$3" output="$4" entries hash bytes
+            local member="blobs/sha256/${digest#sha256:}"
+            entries="$(LC_ALL=C tar -tvf "$archive" "$member")" || return
+            [[ "$entries" == -* && "$entries" != *$'\n'* ]] || return
+            tar -xOf "$archive" "$member" > "$output" || return
+            hash="$(sha256sum < "$output")" || return
+            bytes="$(wc -c < "$output")" || return
+            [[ "${hash%% *}" == "${digest#sha256:}" && "$bytes" == "$size" ]]
+          }
           index_digest() {
-            local archive="$directory/$1" root digest size hash
+            local archive="$directory/$1" root digest size members platform child_digest child_size
             local index="$directory/index.json"
             root="$(tar -xOf "$archive" index.json | jq -er '
               select(.schemaVersion == 2 and (.manifests | length) == 1)
@@ -65,21 +75,27 @@ jobs:
               return 1
             }
             IFS=$'\t' read -r digest size <<< "$root"
-            tar -xOf "$archive" "blobs/sha256/${digest#sha256:}" > "$index" || return
-            hash="$(sha256sum < "$index")" || return
-            if [[ "${hash%% *}" != "${digest#sha256:}" || "$(wc -c < "$index")" != "$size" ]]; then
+            if ! verify_blob "$archive" "$digest" "$size" "$index"; then
               echo "error: $1 index digest or size mismatch" >&2
               return 1
             fi
-            jq -e --argjson platforms "$platforms" '
-              .schemaVersion == 2 and .mediaType == "application/vnd.oci.image.index.v1+json"
-              and all(.manifests[]; .mediaType == "application/vnd.oci.image.manifest.v1+json"
-                      and (.digest | test("^sha256:[0-9a-f]{64}$")))
-              and ([.manifests[].platform | .os + "/" + .architecture] | sort) == $platforms
-            ' "$index" > /dev/null || {
+            members="$(jq -er --argjson platforms "$platforms" '
+              select(.schemaVersion == 2 and .mediaType == "application/vnd.oci.image.index.v1+json"
+                     and all(.manifests[]; .mediaType == "application/vnd.oci.image.manifest.v1+json"
+                             and (.digest | test("^sha256:[0-9a-f]{64}$")))
+                     and ([.manifests[].platform | .os + "/" + .architecture] | sort) == $platforms)
+              | .manifests[]
+              | [(.platform | .os + "/" + .architecture), .digest, .size] | @tsv
+            ' "$index")" || {
               echo "error: $1 must hold one OCI image manifest per Bake platform" >&2
               return 1
             }
+            while IFS=$'\t' read -r platform child_digest child_size; do
+              if ! verify_blob "$archive" "$child_digest" "$child_size" "$directory/manifest.json"; then
+                echo "error: $1 $platform manifest must be one regular archive member matching its digest and size" >&2
+                return 1
+              fi
+            done <<< "$members"
             printf '%s\n' "$digest"
           }
           build "$target.oci.tar"
